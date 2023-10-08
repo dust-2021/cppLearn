@@ -83,15 +83,11 @@ string JsonParser::innerQuote(string &text, size_t &location) {
 
 
 void JsonParser::createNumber(std::string &text, JsonElement *parentNode) {
-    auto ele = new JsonElementNumber(text);
-    ele->parentNode = parentNode;
-    parentNode->childrenNode.push_back(ele);
+
 }
 
 void JsonParser::createString(std::string &text, JsonElement *parentNode) {
-    auto ele = new JsonElementString(text);
-    ele->parentNode = parentNode;
-    parentNode->childrenNode.push_back(ele);
+
 }
 
 void JsonParser::createMapPare(std::string &text, JsonElement *parentNode) {

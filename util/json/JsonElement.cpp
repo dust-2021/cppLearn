@@ -1,5 +1,5 @@
 #include "JsonElement.h"
-#include "typeinfo.h"
+#include "JsonParser.h"
 
 // ------
 const string JsonElement::typeName = "base";
@@ -46,19 +46,21 @@ double JsonElementNumber::asDouble() const {
 string JsonElementNumber::getPrint() const {
     return this->value;
 }
-
-// ------
-const string JsonElementMapPare::typeName = "pare";
-
 // ------
 const string JsonElementMap::typeName = "map";
-
 
 // ------
 const string JsonElementSequence::typeName = "sequence";
 
 void JsonElementSequence::addValue(JsonElement *element) {
     if (this->childrenNode.empty()) {
+        this->elementTypeName = element->getTypeName();
+        this->childrenNode.push_back(element);
         }
+    else {
+        if (element->getTypeName() != this->elementTypeName){
+            throw JsonException("json: bad sequence element type.");
+        }
+        this->childrenNode.push_back(element);
     }
-}
+    }
