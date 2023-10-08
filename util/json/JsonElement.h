@@ -10,39 +10,46 @@ using namespace std;
 // ------ base element class
 class JsonElement {
 public:
+    const static string typeName;
     const JsonElement *parentNode = nullptr;
     vector<JsonElement *> childrenNode;
     bool baseNodeLabel = false;
+
     bool nullValue = false;
 
-    ~JsonElement();
+    [[nodiscard]]virtual string dump() const = 0;
 
-    [[nodiscard]] string getPrint(int maxPrintLength = 10000) const;
-    [[nodiscard]] string dump() const;
 private:
-    const static string typeName;
 };
 
 class JsonElementNull : public JsonElement {
 public:
-    JsonElementNull();
-private:
     const static string typeName;
+
+    JsonElementNull();
+
+    [[nodiscard]]string dump() const override { return "null"; };
+private:
 };
 
 // ------ string value
 class JsonElementString : public JsonElement {
 public:
+    const static string typeName;
+
     string value;
 
     explicit JsonElementString(string &text);
+
+    [[nodiscard]] string dump() const override { return '"' + this->value + '"'; };
 private:
-    const static string typeName;
 };
 
 // ------
 class JsonElementNumber : public JsonElement {
 public:
+    const static string typeName;
+
     string value;
 
     explicit JsonElementNumber(string &text);
@@ -56,42 +63,48 @@ public:
     [[nodiscard]] double asDouble() const;
 
     [[nodiscard]] string getPrint() const;
+
+    [[nodiscard]] string dump() const override { return this->value; };
 private:
-    const static string typeName;
 };
 
 // ------
 class JsonElementMapPare : public JsonElement {
 public:
-    string key;
-    JsonElement value;
-
-    JsonElementMapPare(string &key, JsonElement &value);
-private:
     const static string typeName;
+    JsonElementString *key = nullptr;
+
+    JsonElement *value = nullptr;
+
+    void setKey(JsonElementString *json) { this->key = json; };
+
+    void setValue(JsonElement *json) { this->value = json; };
+private:
 };
 
 // ------ element container
 class JsonElementMap : public JsonElement {
 public:
-    vector<JsonElementMapPare> value;
-    JsonElementMap();
+
+    const static string typeName;
+
+    void addValue(JsonElementMapPare *element) { this->childrenNode.push_back(element); }
 
 private:
-    const static string typeName;
 };
 
 // ------
 class JsonElementSequence : public JsonElement {
 public:
-    vector<JsonElement> value;
-    JsonElementSequence();
-private:
     const static string typeName;
+
+    type_info *typeInfo = nullptr;
+
+    void addValue(JsonElement *element);
+
+private:
 };
 
 // ------
-
-
 
 #endif //FIRSTPROJECT_JSONELEMENT_H

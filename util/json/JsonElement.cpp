@@ -1,39 +1,8 @@
 #include "JsonElement.h"
+#include "typeinfo.h"
 
 // ------
 const string JsonElement::typeName = "base";
-
-JsonElement::~JsonElement() {
-    if (this->baseNodeLabel) {
-        return;
-    }
-    for (auto p: this->childrenNode) {
-        delete p;
-    }
-}
-
-string JsonElement::getPrint(int maxPrintLength) const { // NOLINT(*-no-recursion)
-    string res;
-    if (this->baseNodeLabel) {
-        res += this->getPrint();
-    } else {
-        for (JsonElement *j: this->childrenNode) {
-            res += j->getPrint();
-            // longer than the max print length
-            if (res.size() >= maxPrintLength && maxPrintLength != 0) {
-                res += "...";
-                return res;
-            }
-        }
-    }
-
-    return res;
-}
-
-string JsonElement::dump() const {
-    return this->getPrint(0);
-}
-
 // ------
 const string JsonElementNull::typeName = "null";
 
@@ -81,22 +50,15 @@ string JsonElementNumber::getPrint() const {
 // ------
 const string JsonElementMapPare::typeName = "pare";
 
-JsonElementMapPare::JsonElementMapPare(std::string &key, JsonElement &value) {
-    this->key = string(key);
-    this->value = JsonElement(value);
-    this->childrenNode.push_back(&(this->value));
-}
-
 // ------
 const string JsonElementMap::typeName = "map";
 
-JsonElementMap::JsonElementMap() {
-    this->value = vector<JsonElementMapPare>{};
-}
 
 // ------
 const string JsonElementSequence::typeName = "sequence";
 
-JsonElementSequence::JsonElementSequence() {
-    this->value = vector<JsonElement>{};
+void JsonElementSequence::addValue(JsonElement *element) {
+    if (this->childrenNode.empty()) {
+        }
+    }
 }

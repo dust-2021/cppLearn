@@ -1,5 +1,4 @@
 
-
 #include "JsonParser.h"
 #include "sstream"
 #include "stack"
@@ -37,14 +36,18 @@ JsonElement *JsonParser::parse(string &text) {
                 continue;
             case '{':
                 closeChar.push('}');
-                currentElement = new JsonElementMap();
 
 
+                continue;
+            case '[':
+                closeChar.push(']');
                 continue;
             case ',':
                 if (containerType){
 
                 }
+            case ':':
+
             default:
                 content += pCurrentChar;
         }
@@ -67,7 +70,7 @@ string JsonParser::innerQuote(string &text, size_t &location) {
 
         if (*pCurrentChar == '\\'){
             escape = !escape;
-            result += *pCurrentChar;
+            if (escape){result += *pCurrentChar;}
             continue;
         }
         if(!escape && *pCurrentChar == '"'){
