@@ -8,28 +8,23 @@
 using namespace std;
 
 
-class JsonParser {
-public:
-    JsonParser() = delete;
+JsonElement *parse(string &text);
 
-    static JsonElement *parse(string &text);
+string *dump(JsonElement &obj);
 
-    static string *dump(JsonElement &obj);
+static JsonElement* decodePiece();
 
-private:
+static string innerQuote(string &text, size_t &location);
 
-    static string innerQuote(string &text, size_t &location);
+static void createNumber(string &text, JsonElement *parentNode);
 
-    static void createNumber(string &text, JsonElement *parentNode);
+static void createString(string &text, JsonElement *parentNode);
 
-    static void createString(string &text, JsonElement *parentNode);
+static void createMapPare(string &text, JsonElement *parentNode);
 
-    static void createMapPare(string &text, JsonElement *parentNode);
+static void createMap(string &text, JsonElement *parentNode);
 
-    static void createMap(string &text, JsonElement *parentNode);
-
-    static void createSequence(string &text, JsonElement *parentNode);
-};
+static void createSequence(string &text, JsonElement *parentNode);
 
 class JsonException : public exception {
 public:

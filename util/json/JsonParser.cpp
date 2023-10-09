@@ -4,7 +4,7 @@
 #include "stack"
 #include "cstdint"
 
-JsonElement *JsonParser::parse(string &text) {
+JsonElement* parse(string &text) {
     static char ignoreChar[] = {' ', '\n', '\r', '\t'};
     static char *pIgnoreEnd = ignoreChar + sizeof(ignoreChar) / ignoreChar[0];
     // store single element's content
@@ -29,7 +29,7 @@ JsonElement *JsonParser::parse(string &text) {
 
         switch (*pCurrentChar) {
             case '"':
-                content = JsonParser::innerQuote(text, location);
+                content = innerQuote(text, location);
                 if (pJsonElement == nullptr) {
                     pJsonElement = new JsonElementString(content);
                 }
@@ -61,7 +61,7 @@ JsonElement *JsonParser::parse(string &text) {
     return pJsonElement;
 }
 
-string JsonParser::innerQuote(string &text, size_t &location) {
+string innerQuote(string &text, size_t &location) {
     string result;
     bool escape;
     while (location != text.size()) {
@@ -82,22 +82,22 @@ string JsonParser::innerQuote(string &text, size_t &location) {
 }
 
 
-void JsonParser::createNumber(std::string &text, JsonElement *parentNode) {
+void createNumber(std::string &text, JsonElement *parentNode) {
 
 }
 
-void JsonParser::createString(std::string &text, JsonElement *parentNode) {
+void createString(std::string &text, JsonElement *parentNode) {
 
 }
 
-void JsonParser::createMapPare(std::string &text, JsonElement *parentNode) {
+void createMapPare(std::string &text, JsonElement *parentNode) {
 
 }
 
-void JsonParser::createSequence(std::string &text, JsonElement *parentNode) {
+void createSequence(std::string &text, JsonElement *parentNode) {
 
 }
 
-void JsonParser::createMap(std::string &text, JsonElement *parentNode) {
+void createMap(std::string &text, JsonElement *parentNode) {
 
 }

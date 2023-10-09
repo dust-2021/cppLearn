@@ -5,49 +5,33 @@
 const string JsonElement::typeName = "base";
 // ------
 const string JsonElementNull::typeName = "null";
-
-JsonElementNull::JsonElementNull() {
-    this->nullValue = true;
-    this->baseNodeLabel = true;
-}
-
+const regex JsonElementNull::typeReg = regex(R"(^\s*null\s*$)");
+// ------
+const string JsonElementBool::typeName = "bool";
+const regex JsonElementBool::typeReg = regex(R"((^\s*true\s*$|^\s*false\s*$))");
 // ------
 const string JsonElementString::typeName = "string";
-
-JsonElementString::JsonElementString(string &text) {
-    this->baseNodeLabel = true;
-    this->value = string(text);
-}
-
+const regex JsonElementString::typeReg = regex(R"(^\s*".*"\s*$)");
 // ------
 const string JsonElementNumber::typeName = "number";
-
-JsonElementNumber::JsonElementNumber(std::string &text) {
-    this->baseNodeLabel = true;
-    this->value = string(text);
-}
-
-int JsonElementNumber::asInt() const {
-    return stoi(this->value);
-}
-
-long JsonElementNumber::asLong() const {
-    return stol(this->value);
-}
-
-float JsonElementNumber::asFloat() const {
-    return stof(this->value);
-}
-
-double JsonElementNumber::asDouble() const {
-    return stod(this->value);
-}
-
-string JsonElementNumber::getPrint() const {
-    return this->value;
-}
+const regex JsonElementNumber::typeReg = regex (R"(^\s*\d+(\.\d+)?\s*$)");
 // ------
 const string JsonElementMap::typeName = "map";
+
+string *JsonElementMap::dump() const {
+    // create dump string on heap
+    auto result = new string();
+    for (const auto &iter: this->childrenNode) {
+        if (*result != "{") {
+            *result += ',';
+        }
+        auto temp = iter.second->dump();
+        *result += *temp;
+        delete temp;
+    }
+    *result += '}';
+    return result;
+}
 
 // ------
 const string JsonElementSequence::typeName = "sequence";
@@ -56,11 +40,10 @@ void JsonElementSequence::addValue(JsonElement *element) {
     if (this->childrenNode.empty()) {
         this->elementTypeName = element->getTypeName();
         this->childrenNode.push_back(element);
-        }
-    else {
-        if (element->getTypeName() != this->elementTypeName){
+    } else {
+        if (element->getTypeName() != this->elementTypeName) {
             throw JsonException("json: bad sequence element type.");
         }
         this->childrenNode.push_back(element);
     }
-    }
+}

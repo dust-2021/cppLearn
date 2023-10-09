@@ -12,6 +12,4 @@ add_executable(firstProject main.cpp util/http/Request.cpp util/http/Request.h u
         net/Distributor.h
         util/json/JsonElement.cpp
         util/json/JsonElement.h
-        util/json/JsonObject.cpp
-        util/json/JsonObject.h
 )
