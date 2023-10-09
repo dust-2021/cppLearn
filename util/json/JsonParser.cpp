@@ -4,20 +4,20 @@
 #include "stack"
 #include "cstdint"
 
-JsonElement* parse(string &text) {
+JsonElement* parse(std::string &text) {
     static char ignoreChar[] = {' ', '\n', '\r', '\t'};
     static char *pIgnoreEnd = ignoreChar + sizeof(ignoreChar) / ignoreChar[0];
     // store single element's content
-    string content;
+    std::string content;
     // location of parser
     size_t location = 0;
 
     JsonElement *pJsonElement = nullptr;
     JsonElement *currentElement = pJsonElement;
     //  0 commons; 1 not string; 2 map element; 3 map; 4 sequence
-    int8_t containerType = 0;
+    std::int8_t containerType = 0;
 
-    stack<char> closeChar;
+    std::stack<char> closeChar;
 
     while (location != text.size()) {
         char *pCurrentChar = &text.at(location);
@@ -54,15 +54,15 @@ JsonElement* parse(string &text) {
         throw JsonException("json: bad");
     }
     if (!closeChar.empty()) {
-        string info = "json: mismatch ";
+        std::string info = "json: mismatch ";
         while (!closeChar.empty()) { info += closeChar.top(); }
         throw JsonException(info);
     }
     return pJsonElement;
 }
 
-string innerQuote(string &text, size_t &location) {
-    string result;
+std::string innerQuote(std::string &text, size_t &location) {
+    std::string result;
     bool escape;
     while (location != text.size()) {
         char *pCurrentChar = &text.at(location);

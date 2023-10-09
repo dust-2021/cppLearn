@@ -5,48 +5,49 @@
 #include "vector"
 #include "regex"
 #include "unordered_map"
-
-using namespace std;
+#include "string"
 
 // ------ base element class
 class JsonElement {
 public:
-    const static string typeName;
+    const static std::string typeName;
     JsonElement *parentNode = nullptr;
 
     bool init = false;
     bool baseNodeLabel = true;
     bool nullValue = false;
 
-    //this is a recursion function, always return a pstring on heap
-    [[nodiscard]]virtual string *dump() const = 0;
+    JsonElement() = default;
 
-    [[nodiscard]]virtual string getTypeName() const = 0;
+    //this is a recursion function, always return a p-string on heap
+    [[nodiscard]]virtual std::string dump() const { return ""; };
+
+    [[nodiscard]]virtual std::string getTypeName() const { return JsonElement::typeName; };
 
 private:
 };
 
 class JsonElementNull : public JsonElement {
 public:
-    const static string typeName;
-    const static regex typeReg;
+    const static std::string typeName;
+    const static std::regex typeReg;
 
-    JsonElementNull() : JsonElement() {
+    JsonElementNull() {
         this->init = true;
         this->baseNodeLabel = true;
     };
 
-    [[nodiscard]] string *dump() const override { return new string("null"); };
+    [[nodiscard]] std::string dump() const override { return "null"; };
 
-    [[nodiscard]] string getTypeName() const override { return JsonElementNull::typeName; };
+    [[nodiscard]] std::string getTypeName() const override { return JsonElementNull::typeName; };
 
 private:
 };
 
 class JsonElementBool : public JsonElement {
 public:
-    const static string typeName;
-    const static regex typeReg;
+    const static std::string typeName;
+    const static std::regex typeReg;
 
     bool value = false;
 
@@ -62,39 +63,41 @@ public:
         this->init = true;
     };
 
-    [[nodiscard]] string *dump() const override { return new string(value ? "true" : "false"); }
+    [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
 
-    [[nodiscard]] string getTypeName() const override { return JsonElementBool::typeName; }
+    [[nodiscard]] std::string getTypeName() const override { return JsonElementBool::typeName; }
 };
 
 // ------ string value
 class JsonElementString : public JsonElement {
 public:
-    const static string typeName;
-    const static regex typeReg;
-    string value;
+    const static std::string typeName;
+    const static std::regex typeReg;
+    std::string value;
 
-    JsonElementString() : JsonElement() {};
-
-    explicit JsonElementString(string &text) {
+    explicit JsonElementString(std::string &text) {
+        this->value = text;
+        this->init = true;
+    };
+    explicit JsonElementString(std::string &&text) {
         this->value = text;
         this->init = true;
     };
 
-    [[nodiscard]] string *dump() const override { return new string('"' + this->value + '"'); };
+    [[nodiscard]] std::string dump() const override { return '"' + this->value + '"'; };
 
-    [[nodiscard]] string getTypeName() const override { return JsonElementString::typeName; };
+    [[nodiscard]] std::string getTypeName() const override { return JsonElementString::typeName; };
 private:
 };
 
 // ------
 class JsonElementNumber : public JsonElement {
 public:
-    const static string typeName;
-    const static regex typeReg;
-    string value;
+    const static std::string typeName;
+    const static std::regex typeReg;
+    std::string value;
 
-    explicit JsonElementNumber(string &text) {
+    explicit JsonElementNumber(std::string &text) {
         this->value = text;
         this->init = true;
         this->baseNodeLabel = true;
@@ -108,9 +111,9 @@ public:
 
     [[nodiscard]] double asDouble() const { return stod(this->value); };
 
-    [[nodiscard]] string *dump() const override { return new string(this->value); };
+    [[nodiscard]] std::string dump() const override { return this->value; };
 
-    [[nodiscard]] string getTypeName() const override { return JsonElementNumber::typeName; };
+    [[nodiscard]] std::string getTypeName() const override { return JsonElementNumber::typeName; };
 
 private:
 };
@@ -119,20 +122,22 @@ private:
 class JsonElementMap : public JsonElement {
 public:
 
-    const static string typeName;
+    const static std::string typeName;
     bool baseNodeLabel = false;
     bool init = true;
-    unordered_map<string, JsonElement *> childrenNode;
+    std::unordered_map<std::string, JsonElement> childrenNode;
 
-    JsonElementMap() : JsonElement() {};
+    // TODO: add class type translate before set value
+    void setValue(std::string &&key, JsonElement &value) {
+        this->childrenNode[key] = value;
+        this->childrenNode.at(key).parentNode = this;
+    };
 
-    JsonElement &operator[](string &key) { return *this->childrenNode.at(key); };
+    JsonElement getValue(std::string &&key) { return this->childrenNode.at(key); };
 
-    void setValue(string &key, JsonElement &value) { this->childrenNode[key] = &value; };
+    [[nodiscard]] std::string getTypeName() const override { return JsonElementMap::typeName; };
 
-    [[nodiscard]] string getTypeName() const override { return JsonElementMap::typeName; };
-
-    [[nodiscard]]string *dump() const override;
+    [[nodiscard]]std::string dump() const override;
 
 private:
 };
@@ -140,24 +145,29 @@ private:
 // ------
 class JsonElementSequence : public JsonElement {
 public:
-    const static string typeName;
+    const static std::string typeName;
 
     bool baseNodeLabel = false;
     bool init = true;
-    vector<JsonElement *> childrenNode;
-    string elementTypeName;
+    std::vector<JsonElement> childrenNode;
+    std::string elementTypeName;
 
     JsonElementSequence() : JsonElement() {};
 
-    void addValue(JsonElement *element);
+    // TODO: add class type translate before set value
+    void addValue(JsonElement &element) { this->childrenNode.push_back(element); };
 
-    JsonElement &operator[](int &index) { return *this->childrenNode.at(index); };
+    JsonElement &operator[](size_t &index) { return this->childrenNode.at(index); };
 
-    [[nodiscard]] string getTypeName() const override { return JsonElementSequence::typeName; };
+    [[nodiscard]] std::string getTypeName() const override { return JsonElementSequence::typeName; };
+
+    [[nodiscard]] std::string dump() const override;
 
 private:
 };
 
 // ------
+
+//const JsonElement& createElement(const )
 
 #endif //FIRSTPROJECT_JSONELEMENT_H

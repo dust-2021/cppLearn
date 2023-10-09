@@ -5,36 +5,34 @@
 
 #include "JsonElement.h"
 
-using namespace std;
 
+JsonElement *parse(std::string &text);
 
-JsonElement *parse(string &text);
-
-string *dump(JsonElement &obj);
+std::string *dump(JsonElement &obj);
 
 static JsonElement* decodePiece();
 
-static string innerQuote(string &text, size_t &location);
+static std::string innerQuote(std::string &text, std::size_t &location);
 
-static void createNumber(string &text, JsonElement *parentNode);
+static void createNumber(std::string &text, JsonElement *parentNode);
 
-static void createString(string &text, JsonElement *parentNode);
+static void createString(std::string &text, JsonElement *parentNode);
 
-static void createMapPare(string &text, JsonElement *parentNode);
+static void createMapPare(std::string &text, JsonElement *parentNode);
 
-static void createMap(string &text, JsonElement *parentNode);
+static void createMap(std::string &text, JsonElement *parentNode);
 
-static void createSequence(string &text, JsonElement *parentNode);
+static void createSequence(std::string &text, JsonElement *parentNode);
 
-class JsonException : public exception {
+class JsonException : public std::exception {
 public:
-    string info;
+    std::string info;
 
     JsonException() = default;
 
-    explicit JsonException(string &&info) : info(info) {};
+    explicit JsonException(std::string &&info) : info(info) {};
 
-    explicit JsonException(string &info) : info(info) {};
+    explicit JsonException(std::string &info) : info(info) {};
 
     [[nodiscard]] const char *what() const noexcept override {
         return this->info.c_str();
