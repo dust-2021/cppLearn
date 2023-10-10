@@ -7,6 +7,28 @@
 #include "unordered_map"
 #include "string"
 #include "auto_ptr.h"
+#include "iostream"
+
+class JsonElement;
+
+class JsonElementNull;
+
+class JsonElementString;
+
+class JsonElementNumber;
+
+class JsonElementMap;
+
+class JsonElementSequence;
+
+template<class T_ele>
+T_ele copyElement(T_ele &other);
+
+template<>
+JsonElementMap copyElement(JsonElementMap &other);
+
+template<>
+JsonElementSequence copyElement(JsonElementSequence &other);
 
 // ------ base element class
 class JsonElement {
@@ -33,7 +55,7 @@ public:
     const static std::string typeName;
     const static std::regex typeReg;
 
-    JsonElementNull() {
+    JsonElementNull() : JsonElement() {
         this->init = true;
         this->baseNodeLabel = true;
     };
@@ -43,6 +65,7 @@ public:
     [[nodiscard]] std::string getTypeName() const override { return JsonElementNull::typeName; };
 
 private:
+
 };
 
 class JsonElementBool : public JsonElement {
@@ -51,8 +74,6 @@ public:
     const static std::regex typeReg;
 
     bool value = false;
-
-    JsonElementBool() : JsonElement() {};
 
     explicit JsonElementBool(bool &&value) : JsonElement() {
         this->value = value;
@@ -75,8 +96,6 @@ public:
     const static std::string typeName;
     const static std::regex typeReg;
     std::string value;
-
-    JsonElementString() = default;
 
     explicit JsonElementString(std::string &text) {
         this->value = text;
@@ -129,29 +148,23 @@ public:
     const static std::string typeName;
     bool baseNodeLabel = false;
     bool init = true;
-    std::unordered_map<std::string, std::unique_ptr<JsonElement>> childrenNode;
+    std::unordered_map<std::string, JsonElement *> childrenNode;
 
     // TODO: add class type translate before set value
-    void setValue(std::string &&key, std::unique_ptr<JsonElement> &value) {
-        this->childrenNode[key] = std::move(value);
+    void setValue(std::string &&key, JsonElement *value) {
+        this->childrenNode[key] = value;
         this->childrenNode.at(key)->parentNode = this;
     };
 
-    // return origin object by std::move, delete element which is in the childrenNode
-    std::unique_ptr<JsonElement> getElement(std::string &&key) {
-        auto temp = std::move(this->childrenNode.at(key));
-        this->childrenNode.erase(key);
-        return std::move(temp); };
-
     // return a copy value by given key
-    JsonElement &operator[](std::string &&key){return *this->childrenNode.at(key);};
+    JsonElement *&operator[](std::string &&key) { return this->childrenNode.at(key); };
 
     // return a copy object by given key
-    JsonElement getValue(std::string &&key) {return *this->childrenNode.at(key);};
+    JsonElement getValue(std::string &&key) { return *this->childrenNode.at(key); };
 
     [[nodiscard]] std::string getTypeName() const override { return JsonElementMap::typeName; };
 
-    [[nodiscard]]std::string dump() const override;
+    [[nodiscard]] std::string dump() const override;
 
 private:
 };
@@ -163,11 +176,11 @@ public:
 
     bool baseNodeLabel = false;
     bool init = true;
-    std::vector<std::unique_ptr<JsonElement>> childrenNode;
+    std::vector<JsonElement *> childrenNode;
     std::string elementTypeName;
 
-    // TODO: add class type translate before set value
-    void addValue(std::unique_ptr<JsonElement> &element) { this->childrenNode.push_back(std::move(element)); };
+    // TODO: change add method into parse
+    void addValue(JsonElement *element) { this->childrenNode.push_back(element); };
 
     JsonElement &operator[](size_t &index) { return *this->childrenNode.at(index); };
 

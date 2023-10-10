@@ -80,24 +80,3 @@ std::string innerQuote(std::string &text, size_t &location) {
     }
     return result;
 }
-
-
-void createNumber(std::string &text, JsonElement *parentNode) {
-
-}
-
-void createString(std::string &text, JsonElement *parentNode) {
-
-}
-
-void createMapPare(std::string &text, JsonElement *parentNode) {
-
-}
-
-void createSequence(std::string &text, JsonElement *parentNode) {
-
-}
-
-void createMap(std::string &text, JsonElement *parentNode) {
-
-}

@@ -1,6 +1,5 @@
 #include <iostream>
 #include "JsonElement.h"
-#include "JsonParser.h"
 
 // ------
 const std::string JsonElement::typeName = "base";
@@ -15,7 +14,7 @@ const std::string JsonElementString::typeName = "string";
 const std::regex JsonElementString::typeReg = std::regex(R"(^\s*".*"\s*$)");
 // ------
 const std::string JsonElementNumber::typeName = "number";
-const std::regex JsonElementNumber::typeReg = std::regex (R"(^\s*\d+(\.\d+)?\s*$)");
+const std::regex JsonElementNumber::typeReg = std::regex(R"(^\s*\d+(\.\d+)?\s*$)");
 // ------
 const std::string JsonElementMap::typeName = "map";
 
@@ -26,7 +25,7 @@ std::string JsonElementMap::dump() const {
         if (result != "{") {
             result += ',';
         }
-        result += '"' + iter.first + '"' + ':' + iter.second.dump();
+        result += '"' + iter.first + '"' + ':' + iter.second->dump();
     }
     result += '}';
     return result;
@@ -41,7 +40,7 @@ std::string JsonElementSequence::dump() const {
         if (result != "[") {
             result += ',';
         }
-        result += iter.dump();
+        result += iter->dump();
     }
     result += ']';
     return result;
