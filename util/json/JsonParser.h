@@ -4,28 +4,29 @@
 #define FIRSTPROJECT_JSONPARSER_H
 
 #include "JsonElement.h"
+namespace json {
 
-JsonElement *parse(std::string &text);
+    JsonElement *parse(std::string &text);
 
-std::string *dump(JsonElement &obj);
+    std::string *dump(JsonElement &obj);
 
-static JsonElement* decodePiece();
+    static JsonElement *decodePiece();
 
-static std::string innerQuote(std::string &text, std::size_t &location);
+    static std::string innerQuote(std::string &text, std::size_t &location);
 
-class JsonException : public std::exception {
-public:
-    std::string info;
+    class JsonException : public std::exception {
+    public:
+        std::string info;
 
-    JsonException() = default;
+        JsonException() = default;
 
-    explicit JsonException(std::string &&info) : info(info) {};
+        explicit JsonException(std::string &&info) : info(info) {};
 
-    explicit JsonException(std::string &info) : info(info) {};
+        explicit JsonException(std::string &info) : info(info) {};
 
-    [[nodiscard]] const char *what() const noexcept override {
-        return this->info.c_str();
+        [[nodiscard]] const char *what() const noexcept override {
+            return this->info.c_str();
+        };
     };
-};
-
+}
 #endif //FIRSTPROJECT_JSONPARSER_H

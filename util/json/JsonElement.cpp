@@ -4,7 +4,19 @@
 #include "stack"
 #include "functional"
 
-JsonElement *elementCopy(JsonElement *other) {
+using namespace json;
+
+JsonElement* json::elementCopy_(JsonElement *other){
+    void *result= nullptr;
+    std::stack<JsonElement*> args;
+    args.push(other);
+    while (!args.empty()){
+
+    }
+    return (JsonElement *)result;
+}
+
+JsonElement *json::elementCopy(JsonElement *other) {
     switch (other->getType()) {
         case 1: {
             return new JsonElementNull(*dynamic_cast<JsonElementNull *>(other));
@@ -35,7 +47,7 @@ JsonElement *elementCopy(JsonElement *other) {
             return new_ele;
         }
         default: {
-            return new JsonElement();
+            throw JsonException("json: bad_type_code");
         }
     }
 }

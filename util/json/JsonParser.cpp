@@ -4,7 +4,9 @@
 #include "stack"
 #include "cstdint"
 
-JsonElement* parse(std::string &text) {
+using namespace json;
+
+JsonElement* json::parse(std::string &text) {
     static char ignoreChar[] = {' ', '\n', '\r', '\t'};
     static char *pIgnoreEnd = ignoreChar + sizeof(ignoreChar) / ignoreChar[0];
     // store single element's content
@@ -61,7 +63,7 @@ JsonElement* parse(std::string &text) {
     return pJsonElement;
 }
 
-std::string innerQuote(std::string &text, size_t &location) {
+std::string json::innerQuote(std::string &text, size_t &location) {
     std::string result;
     bool escape;
     while (location != text.size()) {

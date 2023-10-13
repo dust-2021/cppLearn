@@ -6,209 +6,195 @@
 #include "regex"
 #include "unordered_map"
 #include "string"
-#include "auto_ptr.h"
 #include "iostream"
 #include "cstdint"
 
-class JsonElement;
+namespace json {
+    class JsonElement;
 
-class JsonElementNull;
+    class JsonElementNull;
 
-class JsonElementString;
+    class JsonElementString;
 
-class JsonElementNumber;
+    class JsonElementNumber;
 
-class JsonElementMap;
+    class JsonElementMap;
 
-class JsonElementSequence;
+    class JsonElementSequence;
 
-template<class T>
-T *elementTypeCheck(JsonElement *element) {
-    return dynamic_cast<T *>(element);
-}
-
-JsonElement *elementCopy(JsonElement *other);
+    JsonElement *elementCopy_(JsonElement* other);
+    JsonElement *elementCopy(JsonElement *other);
 
 
 // ------ base element class
-class JsonElement {
-public:
-    JsonElement *parentNode = nullptr;
+    class JsonElement {
+    public:
+        JsonElement *parentNode = nullptr;
 
-    const int8_t typeCode = 0;
-    bool baseNodeLabel = true;
+        const int8_t typeCode = 0;
 
-    [[nodiscard]] virtual std::int8_t getType() const { return this->typeCode; };
+        [[nodiscard]] virtual std::int8_t getType() const { return this->typeCode; };
 
-    //this is a recursion function, always return a p-string on heap
-    [[nodiscard]] virtual std::string dump() const { return ""; };
+        //this is a recursion function, always return a p-string on heap
+        [[nodiscard]] virtual std::string dump() const { return ""; };
 
-    virtual JsonElement *getCopy() {
-        auto obj = new JsonElement(*this);
-        return obj;
+        virtual JsonElement *getCopy() {
+            auto obj = new JsonElement(*this);
+            return obj;
+        };
+
+
+    private:
     };
 
+    class JsonElementNull : public JsonElement {
+    public:
+        const static std::regex typeReg;
 
-private:
-};
+        const int8_t typeCode = 1;
 
-class JsonElementNull : public JsonElement {
-public:
-    const static std::regex typeReg;
+        [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
 
-    const int8_t typeCode = 1;
-    bool baseNodeLabel= true;
+        [[nodiscard]] std::string dump() const override { return "null"; };
 
-    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
-
-    [[nodiscard]] std::string dump() const override { return "null"; };
-
-    JsonElement *getCopy() override {
-        auto obj = new JsonElementNull(*this);
-        return obj;
-    }
+        JsonElement *getCopy() override {
+            auto obj = new JsonElementNull(*this);
+            return obj;
+        }
 
 
-private:
+    private:
 
-};
-
-class JsonElementBool : public JsonElement {
-public:
-    const static std::regex typeReg;
-
-    const int8_t typeCode = 2;
-    bool value = false;
-
-    explicit JsonElementBool(bool &&value) : JsonElement() {
-        this->value = value;
-        this->init = true;
     };
 
-    void setValue(bool &val) {
-        this->value = val;
-        this->init = true;
+    class JsonElementBool : public JsonElement {
+    public:
+        const static std::regex typeReg;
+
+        const int8_t typeCode = 2;
+        bool value = false;
+
+        explicit JsonElementBool(bool &&value) : JsonElement() {
+            this->value = value;
+        };
+
+        void setValue(bool &val) {
+            this->value = val;
+        };
+
+        [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+
+        [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
+
+
     };
-
-    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
-
-    [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
-
-
-};
 
 // ------ string value
-class JsonElementString : public JsonElement {
-public:
-    const static std::regex typeReg;
+    class JsonElementString : public JsonElement {
+    public:
+        const static std::regex typeReg;
 
-    const int8_t typeCode = 3;
-    std::string value;
+        const int8_t typeCode = 3;
+        std::string value;
 
-    explicit JsonElementString(std::string &text) {
-        this->value = text;
-        this->init = true;
+        explicit JsonElementString(std::string &text) {
+            this->value = text;
+        };
+
+        explicit JsonElementString(std::string &&text) {
+            this->value = text;
+        };
+
+        [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+
+        [[nodiscard]] std::string dump() const override { return '"' + this->value + '"'; };
+    private:
     };
-
-    explicit JsonElementString(std::string &&text) {
-        this->value = text;
-        this->init = true;
-    };
-
-    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
-
-    [[nodiscard]] std::string dump() const override { return '"' + this->value + '"'; };
-private:
-};
 
 // ------
-class JsonElementNumber : public JsonElement {
-public:
-    const static std::regex typeReg;
+    class JsonElementNumber : public JsonElement {
+    public:
+        const static std::regex typeReg;
 
-    const int8_t typeCode = 4;
+        const int8_t typeCode = 4;
 
-    std::string value;
-    int int_v = NULL;
+        std::string value;
+        long double int_v;
 
-    explicit JsonElementNumber(std::string &text) {
-        this->value = text;
-        this->init = true;
-        this->baseNodeLabel = true;
+        explicit JsonElementNumber(std::string &text) {
+            this->value = text;
+            this->int_v = std::stod(text);
+        };
+
+        [[nodiscard]] int asInt() const { return stoi(this->value); };
+
+        [[nodiscard]] long asLong() const { return stol(this->value); };
+
+        [[nodiscard]] float asFloat() const { return stof(this->value); };
+
+        [[nodiscard]] double asDouble() const { return stod(this->value); };
+
+        [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+
+        [[nodiscard]] std::string dump() const override { return this->value; };
+
+    private:
     };
-
-    [[nodiscard]] int asInt() const { return stoi(this->value); };
-
-    [[nodiscard]] long asLong() const { return stol(this->value); };
-
-    [[nodiscard]] float asFloat() const { return stof(this->value); };
-
-    [[nodiscard]] double asDouble() const { return stod(this->value); };
-
-    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
-
-    [[nodiscard]] std::string dump() const override { return this->value; };
-
-private:
-};
 
 // ------ element container
-class JsonElementMap : public JsonElement {
-public:
+    class JsonElementMap : public JsonElement {
+    public:
 
-    const int8_t typeCode = 5;
-    bool baseNodeLabel = false;
-    bool init = true;
+        const int8_t typeCode = 5;
 
-    std::unordered_map<std::string, JsonElement *> childrenNode;
+        std::unordered_map<std::string, JsonElement *> childrenNode;
 
-    JsonElementMap() = default;
+        JsonElementMap() = default;
 
-    JsonElementMap(JsonElementMap &other);
+        JsonElementMap(JsonElementMap &other);
 
-    ~JsonElementMap();
+        ~JsonElementMap();
 
-    // return a value ptr
-    JsonElement *&operator[](std::string &&key) { return this->childrenNode.at(key); };
+        // return a value ptr
+        JsonElement *&operator[](std::string &&key) { return this->childrenNode.at(key); };
 
-    // copy and store a value ptr
-    void setValue(std::string &&key, JsonElement &value) {
-        this->childrenNode[key] = elementCopy(&value);
-        this->childrenNode.at(key)->parentNode = this;
+        // copy and store a value ptr
+        void setValue(std::string &&key, JsonElement &value) {
+            this->childrenNode[key] = elementCopy(&value);
+            this->childrenNode.at(key)->parentNode = this;
+        };
+
+        // return a copy object by given key
+        JsonElement getValue(std::string &&key) { return *this->childrenNode.at(key); };
+
+        [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+
+        [[nodiscard]] std::string dump() const override;
+
+    private:
+
     };
 
-    // return a copy object by given key
-    JsonElement getValue(std::string &&key) { return *this->childrenNode.at(key); };
-
-    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
-
-    [[nodiscard]] std::string dump() const override;
-
-private:
-
-};
-
 // ------
-class JsonElementSequence : public JsonElement {
-public:
+    class JsonElementSequence : public JsonElement {
+    public:
 
-    const int8_t typeCode = 6;
-    bool baseNodeLabel = false;
-    bool init = true;
-    std::vector<JsonElement *> childrenNode;
+        const int8_t typeCode = 6;
+        std::vector<JsonElement *> childrenNode;
 
-    ~JsonElementSequence();
+        ~JsonElementSequence();
 
-    JsonElement *operator[](size_t &index) { return this->childrenNode.at(index); };
+        JsonElement *operator[](size_t &index) { return this->childrenNode.at(index); };
 
-    void addValue(JsonElement *element) { this->childrenNode.push_back(element); };
+        void addValue(JsonElement *element) { this->childrenNode.push_back(element); };
 
-    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+        [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
 
-    [[nodiscard]] std::string dump() const override;
+        [[nodiscard]] std::string dump() const override;
 
-private:
-};
+    private:
+    };
+}
 
 // ------
 
