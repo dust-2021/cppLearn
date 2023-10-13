@@ -22,11 +22,13 @@ class JsonElementMap;
 
 class JsonElementSequence;
 
-static auto clone = [](const auto &p) -> std::decay_t<decltype(*p)> * {
-    return new std::decay_t<decltype(*p)>(*p);
-};
+template<class T>
+T *elementTypeCheck(JsonElement *element) {
+    return dynamic_cast<T *>(element);
+}
 
 JsonElement *elementCopy(JsonElement *other);
+
 
 // ------ base element class
 class JsonElement {
@@ -34,14 +36,17 @@ public:
     JsonElement *parentNode = nullptr;
 
     const int8_t typeCode = 0;
-    bool init = false;
     bool baseNodeLabel = true;
-    bool nullValue = false;
 
-    JsonElement() = default;
+    [[nodiscard]] virtual std::int8_t getType() const { return this->typeCode; };
 
     //this is a recursion function, always return a p-string on heap
-    [[nodiscard]]virtual std::string dump() const { return ""; };
+    [[nodiscard]] virtual std::string dump() const { return ""; };
+
+    virtual JsonElement *getCopy() {
+        auto obj = new JsonElement(*this);
+        return obj;
+    };
 
 
 private:
@@ -52,13 +57,16 @@ public:
     const static std::regex typeReg;
 
     const int8_t typeCode = 1;
+    bool baseNodeLabel= true;
 
-    JsonElementNull() : JsonElement() {
-        this->init = true;
-        this->baseNodeLabel = true;
-    };
+    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
 
     [[nodiscard]] std::string dump() const override { return "null"; };
+
+    JsonElement *getCopy() override {
+        auto obj = new JsonElementNull(*this);
+        return obj;
+    }
 
 
 private:
@@ -82,7 +90,10 @@ public:
         this->init = true;
     };
 
+    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+
     [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
+
 
 };
 
@@ -104,6 +115,8 @@ public:
         this->init = true;
     };
 
+    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
+
     [[nodiscard]] std::string dump() const override { return '"' + this->value + '"'; };
 private:
 };
@@ -114,7 +127,9 @@ public:
     const static std::regex typeReg;
 
     const int8_t typeCode = 4;
+
     std::string value;
+    int int_v = NULL;
 
     explicit JsonElementNumber(std::string &text) {
         this->value = text;
@@ -129,6 +144,8 @@ public:
     [[nodiscard]] float asFloat() const { return stof(this->value); };
 
     [[nodiscard]] double asDouble() const { return stod(this->value); };
+
+    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
 
     [[nodiscard]] std::string dump() const override { return this->value; };
 
@@ -151,17 +168,19 @@ public:
 
     ~JsonElementMap();
 
-    // TODO: add class type translate before set value
-    void setValue(std::string &&key, JsonElement *value) {
-        this->childrenNode[key] = elementCopy(value);
+    // return a value ptr
+    JsonElement *&operator[](std::string &&key) { return this->childrenNode.at(key); };
+
+    // copy and store a value ptr
+    void setValue(std::string &&key, JsonElement &value) {
+        this->childrenNode[key] = elementCopy(&value);
         this->childrenNode.at(key)->parentNode = this;
     };
 
-    // return a copy value by given key
-    JsonElement *&operator[](std::string &&key) { return this->childrenNode.at(key); };
-
     // return a copy object by given key
     JsonElement getValue(std::string &&key) { return *this->childrenNode.at(key); };
+
+    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
 
     [[nodiscard]] std::string dump() const override;
 
@@ -178,11 +197,13 @@ public:
     bool init = true;
     std::vector<JsonElement *> childrenNode;
 
-    // TODO: change add method into parse
+    ~JsonElementSequence();
+
+    JsonElement *operator[](size_t &index) { return this->childrenNode.at(index); };
+
     void addValue(JsonElement *element) { this->childrenNode.push_back(element); };
 
-    JsonElement &operator[](size_t &index) { return *this->childrenNode.at(index); };
-
+    [[nodiscard]] std::int8_t getType() const override { return this->typeCode; };
 
     [[nodiscard]] std::string dump() const override;
 
