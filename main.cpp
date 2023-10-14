@@ -7,7 +7,7 @@
 #include "unordered_map"
 
 
-int main() {
+void func(){
     std::unordered_map<std::string, int> dict = {{"name", 1}};
     auto container = new json::JsonElementMap();
     auto ele = new json::JsonElementNull();
@@ -19,5 +19,8 @@ int main() {
     std::cout << container_c->dump() << '\n';
     delete container;
     delete container_c;
-    return 0;
+}
+
+int main() {
+    func();
 }

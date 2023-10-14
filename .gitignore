@@ -1,6 +1,7 @@
 /cmake-build-debug
 /venv
 /.idea
+/test
 /.fleet
 /.cache
 *.exe
