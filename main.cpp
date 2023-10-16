@@ -12,12 +12,12 @@ int main() {
     auto container = new json::JsonElementMap();
     auto ele = new json::JsonElementNull();
     container->setValue("name", *ele);
-    auto container_c =new json::JsonElementMap(*container);
-    container->setValue("other", *container_c);
+    auto container_g =container->getCopy();
+    container->setValue("g", *container_g);
 
     std::cout << container->dump() << '\n';
-    std::cout << container_c->dump() << '\n';
+    std::cout << container_g->dump() << '\n';
     delete container;
-    delete container_c;
+    delete container_g;
     return 0;
 }
