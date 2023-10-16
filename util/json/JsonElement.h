@@ -22,9 +22,12 @@ namespace json {
 
     class JsonElementSequence;
 
-    JsonElement *elementCopy_(JsonElement* other);
+    JsonElement *elementCopy_(JsonElement *other);
+
     JsonElement *elementCopy(JsonElement *other);
 
+    template<class T>
+    T reshape(JsonElement *any);
 
 // ------ base element class
     class JsonElement {
@@ -195,6 +198,8 @@ namespace json {
     private:
     };
 }
+
+
 
 // ------
 

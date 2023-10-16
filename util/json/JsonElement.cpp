@@ -6,16 +6,6 @@
 
 using namespace json;
 
-JsonElement* json::elementCopy_(JsonElement *other){
-    void *result= nullptr;
-    std::stack<JsonElement*> args;
-    args.push(other);
-    while (!args.empty()){
-
-    }
-    return (JsonElement *)result;
-}
-
 JsonElement *json::elementCopy(JsonElement *other) {
     switch (other->getType()) {
         case 1: {
@@ -82,7 +72,7 @@ std::string JsonElementMap::dump() const {
         }
         result += '"' + iter.first + '"' + ':' + iter.second->dump();
     }
-    result += '}';
+    result += "}";
     return result;
 }
 
