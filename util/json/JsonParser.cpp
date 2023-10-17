@@ -16,10 +16,11 @@ JsonElement* json::parse(std::string &text) {
 
     JsonElement *pJsonElement = nullptr;
     JsonElement *currentElement = pJsonElement;
+
     //  0 commons; 1 not string; 2 map element; 3 map; 4 sequence
     std::int8_t containerType = 0;
 
-    std::stack<char> closeChar;
+    std::stack<JsonElement> container;
 
     while (location != text.size()) {
         char *pCurrentChar = &text.at(location);
@@ -32,17 +33,15 @@ JsonElement* json::parse(std::string &text) {
         switch (*pCurrentChar) {
             case '"':
                 content = innerQuote(text, location);
-                if (pJsonElement == nullptr) {
-                    pJsonElement = new JsonElementString(content);
-                }
+                currentElement = new JsonElementString();
                 continue;
             case '{':
-                closeChar.push('}');
+
 
 
                 continue;
             case '[':
-                closeChar.push(']');
+
                 continue;
             case ',':
                 if (containerType){
@@ -51,14 +50,14 @@ JsonElement* json::parse(std::string &text) {
             case ':':
 
             default:
-                content += pCurrentChar;
+                throw JsonException("json: bad_char:" + std::to_string(location) +" '" + *pCurrentChar + '\'');
         }
-        throw JsonException("json: bad");
+        if (pJsonElement == nullptr){
+            pJsonElement = currentElement;
+        }
     }
-    if (!closeChar.empty()) {
-        std::string info = "json: mismatch ";
-        while (!closeChar.empty()) { info += closeChar.top(); }
-        throw JsonException(info);
+    if (!container.empty()) {
+        throw JsonException("json: mismatch");
     }
     return pJsonElement;
 }
@@ -82,3 +81,5 @@ std::string json::innerQuote(std::string &text, size_t &location) {
     }
     return result;
 }
+
+
