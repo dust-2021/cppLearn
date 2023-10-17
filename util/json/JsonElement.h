@@ -10,26 +10,30 @@
 #include "cstdint"
 
 namespace json {
+    // didn't use, it's not necessary to set recursion depth.
+    static const int8_t MAX_RECURSION_DEPTH = 50;
+
     class JsonElement;
 
-    class JsonElementNull;
-
-    class JsonElementString;
-
-    class JsonElementNumber;
-
-    class JsonElementMap;
-
-    class JsonElementSequence;
+    // unification object for parse
+    struct JsonPiece {
+        std::string key;
+        std::string value;
+        bool flag = false;
+        JsonElement *element = nullptr;
+    };
 
 // ------ base element class
     class JsonElement {
     public:
+        // must be implemented for inherit
+        virtual ~JsonElement() = 0;
 
-        //this is a recursion function, always return a p-string on heap
         [[nodiscard]] virtual std::string dump() const = 0;
 
         virtual JsonElement *getCopy() = 0;
+
+        virtual void unifySet(JsonPiece &other) = 0;
 
 
     private:
@@ -37,13 +41,12 @@ namespace json {
 
     class JsonElementNull : public JsonElement {
     public:
-        const static std::regex typeReg;
 
         JsonElementNull() = default;
 
         JsonElementNull(JsonElementNull &other) = default;
 
-        ~JsonElementNull() = default;
+        ~JsonElementNull() override = default;
 
         [[nodiscard]] std::string dump() const override { return "null"; };
 
@@ -52,6 +55,8 @@ namespace json {
             return obj;
         }
 
+        void unifySet(JsonPiece &other) override {};
+
 
     private:
 
@@ -59,19 +64,17 @@ namespace json {
 
     class JsonElementBool : public JsonElement {
     public:
-        const static std::regex typeReg;
         bool value = false;
-        JsonElementBool()=default;
-        JsonElementBool(JsonElementBool&other)=default;
+
+        JsonElementBool() = default;
+
+        JsonElementBool(JsonElementBool &other) = default;
 
         explicit JsonElementBool(bool &&value) {
             this->value = value;
         };
-        ~JsonElementBool() = default;
 
-        void setValue(bool &val) {
-            this->value = val;
-        };
+        ~JsonElementBool() override = default;
 
         [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
 
@@ -79,13 +82,22 @@ namespace json {
             return new JsonElementBool(*this);
         }
 
+        void unifySet(JsonPiece &other) override {
+            this->value = other.flag;
+        };
+
     };
 
 // ------ string value
     class JsonElementString : public JsonElement {
     public:
-        const static std::regex typeReg;
         std::string value;
+
+        JsonElementString() = default;
+
+        JsonElementString(JsonElementString &other) = default;
+
+        ~JsonElementString() override = default;
 
         explicit JsonElementString(std::string &text) {
             this->value = text;
@@ -101,35 +113,38 @@ namespace json {
             return new JsonElementString(*this);
         }
 
+        void unifySet(JsonPiece &other) override {
+            this->value = other.value;
+        };
+
     private:
     };
 
 // ------
     class JsonElementNumber : public JsonElement {
     public:
-        const static std::regex typeReg;
 
         std::string value;
-        long double int_v;
+
+        JsonElementNumber() = default;
 
         explicit JsonElementNumber(std::string &text) {
             this->value = text;
-            this->int_v = std::stod(text);
         };
 
-        [[nodiscard]] int asInt() const { return stoi(this->value); };
+        JsonElementNumber(JsonElementNumber &other) = default;
 
-        [[nodiscard]] long asLong() const { return stol(this->value); };
-
-        [[nodiscard]] float asFloat() const { return stof(this->value); };
-
-        [[nodiscard]] double asDouble() const { return stod(this->value); };
+        ~JsonElementNumber() override = default;
 
         [[nodiscard]] std::string dump() const override { return this->value; };
 
         JsonElementNumber *getCopy() override {
             return new JsonElementNumber(*this);
         }
+
+        void unifySet(JsonPiece &other) override {
+            this->value = other.value;
+        };
 
     private:
     };
@@ -142,25 +157,17 @@ namespace json {
 
         JsonElementMap() = default;
 
-        ~JsonElementMap();
+        JsonElementMap(JsonElementMap &other);
 
-        // return a value ptr
-        JsonElement *&operator[](std::string &&key) { return this->childrenNode.at(key); };
-
-        // copy and store a value ptr
-        void setValue(std::string &&key, JsonElement &value) {
-            this->childrenNode[key] = value.getCopy();
-        };
+        ~JsonElementMap() override;
 
         [[nodiscard]] std::string dump() const override;
 
-        JsonElementMap *getCopy() override {
-            auto temp = new JsonElementMap(*this);
-            for (const auto &pair: this->childrenNode) {
-                temp->childrenNode[pair.first] = pair.second->getCopy();
-            }
-            return temp;
-        }
+        JsonElementMap *getCopy() override;
+
+        void unifySet(JsonPiece &other) override {
+            this->childrenNode[other.key] = other.element->getCopy();
+        };
 
     private:
 
@@ -169,32 +176,26 @@ namespace json {
 // ------
     class JsonElementSequence : public JsonElement {
     public:
+
         std::vector<JsonElement *> childrenNode;
 
-        ~JsonElementSequence();
+        JsonElementSequence() = default;
 
-        JsonElement *operator[](size_t &index) { return this->childrenNode.at(index); };
+        JsonElementSequence(JsonElementSequence &other);
 
-        void addValue(JsonElement *element) { this->childrenNode.push_back(element); };
+        ~JsonElementSequence() override;
 
         [[nodiscard]] std::string dump() const override;
 
-        JsonElementSequence *getCopy() override {
-            auto temp = new JsonElementSequence(*this);
-            for (auto pair: this->childrenNode) {
-                temp->childrenNode.push_back(pair->getCopy());
-            }
-            return temp;
-        }
+        JsonElementSequence *getCopy() override;
+
+        void unifySet(JsonPiece &other) override {
+            this->childrenNode.push_back(other.element->getCopy());
+        };
 
     private:
     };
 }
 
-
-
-// ------
-
-//const JsonElement& createElement(const )
 
 #endif //FIRSTPROJECT_JSONELEMENT_H

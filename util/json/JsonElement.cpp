@@ -1,24 +1,22 @@
 #include <iostream>
 #include "JsonElement.h"
-#include "JsonParser.h"
 #include "stack"
-#include "functional"
 
 using namespace json;
 
-const std::regex JsonElementNull::typeReg = std::regex(R"(^\s*null\s*$)");
+JsonElement::~JsonElement() = default;
 
-const std::regex JsonElementBool::typeReg = std::regex(R"((^\s*true\s*$|^\s*false\s*$))");
-
-const std::regex JsonElementString::typeReg = std::regex(R"(^\s*".*"\s*$)");
-
-const std::regex JsonElementNumber::typeReg = std::regex(R"(^\s*\d+(\.\d+)?\s*$)");
+JsonElementMap::JsonElementMap(json::JsonElementMap &other) {
+    for (const auto &pair: other.childrenNode) {
+        this->childrenNode[pair.first] = pair.second->getCopy();
+    }
+}
 
 // delete all children element
 JsonElementMap::~JsonElementMap() {
     for (auto &pair: this->childrenNode) {
         delete pair.second;
-        pair.second= nullptr;
+        pair.second = nullptr;
     }
 }
 
@@ -32,6 +30,20 @@ std::string JsonElementMap::dump() const {
     }
     result += "}";
     return result;
+}
+
+JsonElementMap *JsonElementMap::getCopy() {
+    auto temp = new JsonElementMap(*this);
+    for (const auto &pair: this->childrenNode) {
+        temp->childrenNode[pair.first] = pair.second->getCopy();
+    }
+    return temp;
+}
+
+JsonElementSequence::JsonElementSequence(json::JsonElementSequence &other) {
+    for (const auto &item: other.childrenNode) {
+        this->childrenNode.push_back(item->getCopy());
+    }
 }
 
 JsonElementSequence::~JsonElementSequence() {
@@ -51,4 +63,12 @@ std::string JsonElementSequence::dump() const {
     }
     result += ']';
     return result;
+}
+
+JsonElementSequence *JsonElementSequence::getCopy() {
+    auto temp = new JsonElementSequence(*this);
+    for (auto pair: this->childrenNode) {
+        temp->childrenNode.push_back(pair->getCopy());
+    }
+    return temp;
 }
