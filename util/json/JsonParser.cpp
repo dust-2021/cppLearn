@@ -6,22 +6,22 @@
 
 using namespace json;
 
-JsonElement* json::parse(std::string &text) {
+JsonElement *json::parse(std::string &text) {
     static char ignoreChar[] = {' ', '\n', '\r', '\t'};
     static char *pIgnoreEnd = ignoreChar + sizeof(ignoreChar) / ignoreChar[0];
+    static std::regex number = std::regex(R"(^(\d+)(\.\d+)?)");
     // store single element's content
     std::string content;
     // location of parser
     size_t location = 0;
 
+    JsonPiece box;
     JsonElement *pJsonElement = nullptr;
-    JsonElement *currentElement = pJsonElement;
+    JsonElement *currentElement = nullptr;
 
-    //  0 commons; 1 not string; 2 map element; 3 map; 4 sequence
-    std::int8_t containerType = 0;
+    std::stack<JsonElement *> container;
 
-    std::stack<JsonElement> container;
-
+    // main loop
     while (location != text.size()) {
         char *pCurrentChar = &text.at(location);
         // ignore space
@@ -32,27 +32,45 @@ JsonElement* json::parse(std::string &text) {
 
         switch (*pCurrentChar) {
             case '"':
-                content = innerQuote(text, location);
                 currentElement = new JsonElementString();
-                continue;
+                container.push(new JsonElementString());
+                box.value = innerQuote(text, location);
+                box.active = true;
             case '{':
-
-
-
-                continue;
+                currentElement = new JsonElementMap();
             case '[':
-
-                continue;
+                currentElement = new JsonElementSequence();
             case ',':
-                if (containerType){
-
-                }
+                box.active= true;
             case ':':
-
+                ;
+            case ']':
+                ;
             default:
-                throw JsonException("json: bad_char:" + std::to_string(location) +" '" + *pCurrentChar + '\'');
+                content += *pCurrentChar;
         }
-        if (pJsonElement == nullptr){
+        if (!box.active){
+            continue;
+        } else if (content == "null"){
+            currentElement = new JsonElementNull();
+            box.active= true;
+        } else if(content == "true" || content == "false"){
+            currentElement = new JsonElementBool();
+            box.flag = content == "true";
+            box.active= true;
+        }
+        else if (std::regex_match(content, number)){
+            currentElement = new JsonElementNumber();
+            box.value = content;
+            box.active= true;
+        } else{
+            throw JsonException("json: bad_convert: " + content);
+        }
+
+        currentElement->unifySet(box);
+        box.active= false;
+
+        if (pJsonElement == nullptr) {
             pJsonElement = currentElement;
         }
     }
@@ -69,12 +87,12 @@ std::string json::innerQuote(std::string &text, size_t &location) {
         char *pCurrentChar = &text.at(location);
         location++;
 
-        if (*pCurrentChar == '\\'){
+        if (*pCurrentChar == '\\') {
             escape = !escape;
-            if (escape){result += *pCurrentChar;}
+            if (escape) { result += *pCurrentChar; }
             continue;
         }
-        if(!escape && *pCurrentChar == '"'){
+        if (!escape && *pCurrentChar == '"') {
             break;
         }
         result += *pCurrentChar;
