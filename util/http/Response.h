@@ -8,26 +8,10 @@
 #include "string"
 #include "unordered_map"
 
-using namespace std;
+namespace http {
 
-class Response {
-public:
-    string method;
-    string url;
-    string host;
-    unsigned int port;
+    class Response {
 
-    unordered_map<string, string> headers;
-    string context;
-    string _origin_text;
-
-    Response(string &text);
-
-    unordered_map<string, string> parse_headers();
-
-    unordered_map<string, string> parse_json();
-
-};
-
-
+    };
+}
 #endif //FIRSTPROJECT_RESPONSE_H

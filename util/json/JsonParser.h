@@ -4,15 +4,17 @@
 #define FIRSTPROJECT_JSONPARSER_H
 
 #include "JsonElement.h"
+
 namespace json {
 
     JsonElement *parse(std::string &text);
 
-    JsonElement *parse(std::string &&text){return parse(text);};
+    JsonElement *parse(std::string &&text) { return parse(text); };
 
-    static void decodePiece();
+    static void decodePiece(JsonElement *&current);
 
     static std::string innerQuote(std::string &text, std::size_t &location);
+
 
     class JsonException : public std::exception {
     public:

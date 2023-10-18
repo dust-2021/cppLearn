@@ -5,12 +5,11 @@
 #include "vector"
 #include "regex"
 #include "unordered_map"
-#include "string"
 #include "iostream"
 #include "cstdint"
 
 namespace json {
-    // didn't use, it's not necessary to set recursion depth.
+    // haven't used, it's not necessary to set recursion depth.
     static const int8_t MAX_RECURSION_DEPTH = 50;
 
     class JsonElement;
@@ -21,6 +20,7 @@ namespace json {
         std::string value;
         bool flag = false;
         JsonElement *element = nullptr;
+        bool active = false;
     };
 
 // ------ base element class
@@ -34,6 +34,8 @@ namespace json {
         virtual JsonElement *getCopy() = 0;
 
         virtual void unifySet(JsonPiece &other) = 0;
+
+        virtual int8_t typeCode() = 0;
 
 
     private:
@@ -56,6 +58,8 @@ namespace json {
         }
 
         void unifySet(JsonPiece &other) override {};
+
+        int8_t typeCode() override { return 1; };
 
 
     private:
@@ -86,6 +90,7 @@ namespace json {
             this->value = other.flag;
         };
 
+        int8_t typeCode() override { return 2; };
     };
 
 // ------ string value
@@ -117,6 +122,8 @@ namespace json {
             this->value = other.value;
         };
 
+        int8_t typeCode() override { return 3; };
+
     private:
     };
 
@@ -146,6 +153,8 @@ namespace json {
             this->value = other.value;
         };
 
+        int8_t typeCode() override { return 4; };
+
     private:
     };
 
@@ -168,6 +177,8 @@ namespace json {
         void unifySet(JsonPiece &other) override {
             this->childrenNode[other.key] = other.element->getCopy();
         };
+
+        int8_t typeCode() override { return 5; };
 
     private:
 
@@ -193,6 +204,7 @@ namespace json {
             this->childrenNode.push_back(other.element->getCopy());
         };
 
+        int8_t typeCode() override { return 6; };
     private:
     };
 }
