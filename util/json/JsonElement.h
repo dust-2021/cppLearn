@@ -25,6 +25,7 @@ namespace json {
 
 // ------ base element class
     class JsonElement {
+
     public:
         // must be implemented for inherit
         virtual ~JsonElement() = 0;
@@ -33,7 +34,7 @@ namespace json {
 
         virtual JsonElement *getCopy() = 0;
 
-        virtual void unifySet(JsonPiece &other) = 0;
+        virtual void unifySetValue(JsonPiece &other) = 0;
 
         virtual int8_t typeCode() = 0;
 
@@ -42,6 +43,7 @@ namespace json {
     };
 
     class JsonElementNull : public JsonElement {
+
     public:
 
         JsonElementNull() = default;
@@ -57,7 +59,7 @@ namespace json {
             return obj;
         }
 
-        void unifySet(JsonPiece &other) override {};
+        void unifySetValue(JsonPiece &other) override {};
 
         int8_t typeCode() override { return 1; };
 
@@ -68,7 +70,7 @@ namespace json {
 
     class JsonElementBool : public JsonElement {
     public:
-        bool value = false;
+
 
         JsonElementBool() = default;
 
@@ -86,17 +88,19 @@ namespace json {
             return new JsonElementBool(*this);
         }
 
-        void unifySet(JsonPiece &other) override {
+        void unifySetValue(JsonPiece &other) override {
             this->value = other.flag;
         };
 
         int8_t typeCode() override { return 2; };
+    private:
+        bool value = false;
     };
 
 // ------ string value
     class JsonElementString : public JsonElement {
     public:
-        std::string value;
+
 
         JsonElementString() = default;
 
@@ -118,20 +122,20 @@ namespace json {
             return new JsonElementString(*this);
         }
 
-        void unifySet(JsonPiece &other) override {
+        void unifySetValue(JsonPiece &other) override {
             this->value = other.value;
         };
 
         int8_t typeCode() override { return 3; };
 
     private:
+        std::string value;
     };
 
 // ------
     class JsonElementNumber : public JsonElement {
     public:
 
-        std::string value;
 
         JsonElementNumber() = default;
 
@@ -149,20 +153,20 @@ namespace json {
             return new JsonElementNumber(*this);
         }
 
-        void unifySet(JsonPiece &other) override {
+        void unifySetValue(JsonPiece &other) override {
             this->value = other.value;
         };
 
         int8_t typeCode() override { return 4; };
 
     private:
+        std::string value;
     };
 
 // ------ element container
     class JsonElementMap : public JsonElement {
     public:
 
-        std::unordered_map<std::string, JsonElement *> childrenNode;
 
         JsonElementMap() = default;
 
@@ -174,21 +178,20 @@ namespace json {
 
         JsonElementMap *getCopy() override;
 
-        void unifySet(JsonPiece &other) override {
+        void unifySetValue(JsonPiece &other) override {
             this->childrenNode[other.key] = other.element->getCopy();
         };
 
         int8_t typeCode() override { return 5; };
 
     private:
-
+        std::unordered_map<std::string, JsonElement *> childrenNode;
     };
 
 // ------
     class JsonElementSequence : public JsonElement {
     public:
 
-        std::vector<JsonElement *> childrenNode;
 
         JsonElementSequence() = default;
 
@@ -200,12 +203,13 @@ namespace json {
 
         JsonElementSequence *getCopy() override;
 
-        void unifySet(JsonPiece &other) override {
+        void unifySetValue(JsonPiece &other) override {
             this->childrenNode.push_back(other.element->getCopy());
         };
 
         int8_t typeCode() override { return 6; };
     private:
+        std::vector<JsonElement *> childrenNode;
     };
 }
 

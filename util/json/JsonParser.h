@@ -9,8 +9,6 @@ namespace json {
 
     JsonElement *parse(std::string &text);
 
-    JsonElement *parse(std::string &&text) { return parse(text); };
-
     static void decodePiece(JsonElement *&current);
 
     static std::string innerQuote(std::string &text, std::size_t &location);
