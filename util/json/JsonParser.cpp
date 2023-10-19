@@ -14,6 +14,7 @@ JsonElement *json::parse(std::string &text) {
     std::string content;
     // location of parser
     size_t location = 0;
+    bool nameType = false;
 
     JsonPiece box;
     JsonElement *pJsonElement = nullptr;
@@ -25,27 +26,49 @@ JsonElement *json::parse(std::string &text) {
     while (location != text.size()) {
         char *pCurrentChar = &text.at(location);
         // ignore space
-        if (std::find(ignoreChar, pIgnoreEnd, *pCurrentChar) == pIgnoreEnd) {
+        location++;
+        if (std::find(ignoreChar, pIgnoreEnd, *pCurrentChar) != pIgnoreEnd) {
             continue;
         }
-        location++;
 
         switch (*pCurrentChar) {
             case '"':
-                currentElement = new JsonElementString();
-                container.push(new JsonElementString());
-                box.value = innerQuote(text, location);
-                box.active = true;
+                if (nameType){
+                    box.key = innerQuote(text, location);
+                    nameType = false;
+                } else{
+                    currentElement = new JsonElementString();
+                    box.value = innerQuote(text, location);
+                    box.active = true;
+                }
+                break;
             case '{':
                 currentElement = new JsonElementMap();
+                nameType = true;
+                break;
             case '[':
                 currentElement = new JsonElementSequence();
+                break;
             case ',':
                 box.active= true;
+                break;
             case ':':
-                ;
+                nameType = false;
+                break;
+            case '}':
+                if(currentElement->typeCode() != 5){
+                    throw JsonException("json: mismatched close char at " + std::to_string(location));
+                }
+                container.pop();
+                currentElement = container.top();
+                break;
             case ']':
-                ;
+                if (currentElement->typeCode() != 6){
+                    throw JsonException("json: mismatched close char at " + std::to_string(location));
+                }
+                container.pop();
+                currentElement = container.top();
+                break;
             default:
                 content += *pCurrentChar;
         }
@@ -67,7 +90,7 @@ JsonElement *json::parse(std::string &text) {
             throw JsonException("json: bad_convert: " + content);
         }
 
-        currentElement->unifySet(box);
+        currentElement->unifySetValue(box);
         box.active= false;
 
         if (pJsonElement == nullptr) {
@@ -75,7 +98,7 @@ JsonElement *json::parse(std::string &text) {
         }
     }
     if (!container.empty()) {
-        throw JsonException("json: mismatch");
+        throw JsonException("json: mismatched close char");
     }
     return pJsonElement;
 }
