@@ -8,7 +8,7 @@
 #include "iostream"
 #include "cstdint"
 
-namespace json {
+namespace json::element {
     // haven't used, it's not necessary to set recursion depth.
     static const int8_t MAX_RECURSION_DEPTH = 50;
 
@@ -38,7 +38,6 @@ namespace json {
 
         virtual int8_t typeCode() = 0;
 
-
     private:
     };
 
@@ -62,7 +61,6 @@ namespace json {
         void unifySetValue(JsonPiece &other) override {};
 
         int8_t typeCode() override { return 1; };
-
 
     private:
 
@@ -210,6 +208,21 @@ namespace json {
         int8_t typeCode() override { return 6; };
     private:
         std::vector<JsonElement *> childrenNode;
+    };
+
+    class ElementException : public std::exception {
+    public:
+        std::string info;
+
+        ElementException() = default;
+
+        explicit ElementException(std::string &&info) : info(info) {};
+
+        explicit ElementException(std::string &info) : info(info) {};
+
+        [[nodiscard]] const char *what() const noexcept override {
+            return this->info.c_str();
+        };
     };
 }
 

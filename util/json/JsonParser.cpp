@@ -4,7 +4,7 @@
 #include "stack"
 #include "cstdint"
 
-using namespace json;
+using namespace json::element;
 
 JsonElement *json::parse(std::string &text) {
     static char ignoreChar[] = {' ', '\n', '\r', '\t'};
@@ -59,15 +59,15 @@ JsonElement *json::parse(std::string &text) {
                 if(currentElement->typeCode() != 5){
                     throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
-                container.pop();
                 currentElement = container.top();
+                container.pop();
                 break;
             case ']':
                 if (currentElement->typeCode() != 6){
                     throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
-                container.pop();
                 currentElement = container.top();
+                container.pop();
                 break;
             default:
                 content += *pCurrentChar;
