@@ -1,0 +1,10 @@
+#ifndef FIRSTPROJECT_THREADPOOL_H
+#define FIRSTPROJECT_THREADPOOL_H
+
+
+class threadPool {
+
+};
+
+
+#endif //FIRSTPROJECT_THREADPOOL_H

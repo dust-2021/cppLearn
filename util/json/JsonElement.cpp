@@ -2,11 +2,11 @@
 #include "JsonElement.h"
 #include "stack"
 
-using namespace json;
+using namespace json::element;
 
 JsonElement::~JsonElement() = default;
 
-JsonElementMap::JsonElementMap(json::JsonElementMap &other) {
+JsonElementMap::JsonElementMap(JsonElementMap &other) {
     for (const auto &pair: other.childrenNode) {
         this->childrenNode[pair.first] = pair.second->getCopy();
     }
@@ -40,7 +40,7 @@ JsonElementMap *JsonElementMap::getCopy() {
     return temp;
 }
 
-JsonElementSequence::JsonElementSequence(json::JsonElementSequence &other) {
+JsonElementSequence::JsonElementSequence(JsonElementSequence &other) {
     for (const auto &item: other.childrenNode) {
         this->childrenNode.push_back(item->getCopy());
     }

@@ -1,15 +1,25 @@
-
-
 #ifndef FIRSTPROJECT_JSONPARSER_H
 #define FIRSTPROJECT_JSONPARSER_H
 
 #include "JsonElement.h"
+#include "map"
 
 namespace json {
 
-    JsonElement *parse(std::string &text);
+    element::JsonElement *parse(std::string &text);
 
-    static void decodePiece(JsonElement *&current);
+    // convert obj to json obj
+    template<class T>
+    element::JsonElement *load(T any);
+
+
+    template<class T>
+    element::JsonElement *load(std::vector<T> any);
+
+    template<class T>
+    element::JsonElement *load(std::map<std::string, T> any);
+
+    static void decodePiece(element::JsonElement *&current);
 
     static std::string innerQuote(std::string &text, std::size_t &location);
 
