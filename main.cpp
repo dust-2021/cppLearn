@@ -9,7 +9,19 @@
 
 
 int main() {
-    std::string text = "{\"name\": null}";
-    auto res = json::parse(text);
-    std::cout << res->dump() << '\n';
+//    std::string text = "{\"name\": null}";
+//    auto res = json::parse(text);
+//    std::cout << res->dump() << '\n';
+    std::fstream f("/code/cppCode/firstProject/test/data.json");
+    std::string res;
+    if (f){
+        printf("opening");
+        std::string line;
+        while (std::getline(f,line )){
+            res += line;
+        }
+    }
+    std::cout<< res << '\n';
+    auto result = json::parse(res);
+
 }

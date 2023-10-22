@@ -59,14 +59,14 @@ JsonElement *json::parse(std::string &text) {
                 if(currentElement->typeCode() != 5){
                     throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
-                currentElement = container.top();
+                currentElement = container.empty()? container.top(): nullptr;
                 container.pop();
                 break;
             case ']':
                 if (currentElement->typeCode() != 6){
                     throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
-                currentElement = container.top();
+                currentElement = container.empty()? container.top(): nullptr;
                 container.pop();
                 break;
             default:
