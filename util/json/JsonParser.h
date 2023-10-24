@@ -8,18 +8,49 @@ namespace json {
 
     element::JsonElement *parse(std::string &text);
 
+    template<class T>
+    element::JsonElement *load(T &any) {
+        return new element::JsonElementNumber(std::to_string(any));
+    }
+
     // convert obj to json obj
-    template<class T>
-    element::JsonElement *load(T any);
+//    template<> element::JsonElement *load<std::string>(std::string &any) {
+//        return new element::JsonElementString(any);
+//    }
+
+//    element::JsonElement *load() {
+//        return new element::JsonElementNull();
+//    }
 
 
     template<class T>
-    element::JsonElement *load(std::vector<T> any);
+    element::JsonElement *load(std::vector<T> any) {
+        auto obj = new element::JsonElementSequence();
+        for (auto p: any) {
+            obj->push_back(load(p));
+        }
+        return obj;
+    }
 
     template<class T>
-    element::JsonElement *load(std::map<std::string, T> any);
+    element::JsonElement *load(std::map<std::string, T> any) {
+        auto obj = new element::JsonElementMap();
+        for (auto pair: any) {
+            obj[pair.first] = load(pair.second);
+        }
+        return obj;
+    }
 
-    static void decodePiece(element::JsonElement *&current);
+    template<class T>
+    element::JsonElement *load(std::unordered_map<std::string, T> any){
+        auto obj = new element::JsonElementMap();
+        for (auto pair: any) {
+            obj[pair.first] = load(pair.second);
+        }
+        return obj;
+    }
+
+    static json::element::JsonPiece decodePiece(char* pCurrentChar);
 
     static std::string innerQuote(std::string &text, std::size_t &location);
 

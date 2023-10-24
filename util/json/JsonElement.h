@@ -23,24 +23,28 @@ namespace json::element {
         bool active = false;
     };
 
-// ------ base element class
+    // base element class
     class JsonElement {
 
     public:
         // must be implemented for inherit
         virtual ~JsonElement() = 0;
 
+        // dump json object to string
         [[nodiscard]] virtual std::string dump() const = 0;
 
+        // return a new json object ptr
         virtual JsonElement *getCopy() = 0;
 
+        // initial object value
         virtual void unifySetValue(JsonPiece &other) = 0;
 
+        // return type code
         virtual int8_t typeCode() = 0;
 
     private:
     };
-
+    // null class
     class JsonElementNull : public JsonElement {
 
     public:
@@ -66,6 +70,7 @@ namespace json::element {
 
     };
 
+    // logistic class
     class JsonElementBool : public JsonElement {
     public:
 
@@ -95,7 +100,7 @@ namespace json::element {
         bool value = false;
     };
 
-// ------ string value
+    // string class
     class JsonElementString : public JsonElement {
     public:
 
@@ -130,7 +135,7 @@ namespace json::element {
         std::string value;
     };
 
-// ------
+    // number class
     class JsonElementNumber : public JsonElement {
     public:
 
@@ -161,7 +166,7 @@ namespace json::element {
         std::string value;
     };
 
-// ------ element container
+    // map class
     class JsonElementMap : public JsonElement {
     public:
 
@@ -182,11 +187,16 @@ namespace json::element {
 
         int8_t typeCode() override { return 5; };
 
+        JsonElement* operator[](std::string& key){
+            return this->childrenNode[key];
+        }
+
+
     private:
         std::unordered_map<std::string, JsonElement *> childrenNode;
     };
 
-// ------
+    // sequence class
     class JsonElementSequence : public JsonElement {
     public:
 
@@ -206,10 +216,15 @@ namespace json::element {
         };
 
         int8_t typeCode() override { return 6; };
+
+        void push_back(JsonElement* other){
+            this->childrenNode.push_back(other->getCopy());
+        };
     private:
         std::vector<JsonElement *> childrenNode;
     };
 
+    // json element exception
     class ElementException : public std::exception {
     public:
         std::string info;

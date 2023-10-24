@@ -7,11 +7,7 @@
 #include "functional"
 #include "unordered_map"
 
-
-int main() {
-//    std::string text = "{\"name\": null}";
-//    auto res = json::parse(text);
-//    std::cout << res->dump() << '\n';
+void func(){
     std::fstream f("/code/cppCode/firstProject/test/data.json");
     std::string res;
     if (f){
@@ -20,8 +16,21 @@ int main() {
         while (std::getline(f,line )){
             res += line;
         }
+    } else{
+        std::cout << "open failed\n";
     }
     std::cout<< res << '\n';
     auto result = json::parse(res);
+}
+
+void func2(){
+    auto data = std::unordered_map<std::string, int> {{"age", 12}, {"loc", 13}};
+    data["name"];
+    data["name"] = 11;
+    std::cout << data["name"] << '\n';
+}
+
+int main() {
+    func2();
 
 }
