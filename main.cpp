@@ -30,7 +30,16 @@ void func2(){
     std::cout << data["name"] << '\n';
 }
 
+void func3(){
+    std::string str = "12345";
+    const char * p = str.c_str();
+    while (*p != '\0'){
+        std::cout << *p << '\n';
+        p++;
+    }
+}
+
 int main() {
-    func2();
+    func3();
 
 }

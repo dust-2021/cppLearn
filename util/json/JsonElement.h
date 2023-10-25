@@ -19,8 +19,8 @@ namespace json::element {
         std::string key;
         std::string value;
         bool flag = false;
-        JsonElement *element = nullptr;
-        bool active = false;
+        int8_t parentType = 0;
+        int8_t valueType = 0;
     };
 
     // base element class

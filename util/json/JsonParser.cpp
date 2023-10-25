@@ -9,14 +9,9 @@ using namespace json::element;
 JsonElement *json::parse(std::string &text) {
     static std::vector<char> ignoreChar = {' ', '\n', '\r', '\t'};
     static std::regex number = std::regex(R"(^(\d+)(\.\d+)?)");
-    // store single element's content
-    std::string content;
-    // location of parser
-    size_t location = 0;
-    const char *pCurrentChar = text.c_str();
-    bool nameType = false;
+    char *pCurrentChar = &*text.begin();
 
-    JsonPiece box;
+    json::element::JsonPiece box;
     JsonElement *pJsonElement = nullptr;
     JsonElement *currentElement = nullptr;
 
@@ -32,67 +27,44 @@ JsonElement *json::parse(std::string &text) {
         }
 
         switch (*pCurrentChar) {
-            case '"':
-                if (nameType) {
-                    box.key = innerQuote(text, location);
-                    nameType = false;
-                } else {
-                    currentElement = new JsonElementString();
-                    box.value = innerQuote(text, location);
-                    box.active = true;
-                }
-                break;
+
             case '{':
                 currentElement = new JsonElementMap();
-                nameType = true;
                 break;
             case '[':
                 currentElement = new JsonElementSequence();
                 break;
-            case ',':
-                box.active = true;
-                break;
-            case ':':
-                nameType = false;
-                break;
             case '}':
                 if (currentElement->typeCode() != 5) {
-                    throw JsonException("json: mismatched close char at " + std::to_string(location));
+                    throw JsonException("json: mismatched close char at " + std::to_string(*pCurrentChar));
                 }
                 currentElement = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             case ']':
                 if (currentElement->typeCode() != 6) {
-                    throw JsonException("json: mismatched close char at " + std::to_string(location));
+                    throw JsonException("json: mismatched close char at "+ std::to_string(*pCurrentChar));
                 }
                 currentElement = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             default:
-                content += *pCurrentChar;
+                box = json::decodePiece(pCurrentChar);
         }
+        switch (box.valueType) {
+            case 0:
+                continue;
+            case 1:
+                currentElement = new JsonElementNull();
+                currentElement->unifySetValue(box);
+                break;
+            case 2:
 
-        // box active means to add value to current element
-        if (!box.active) {
-            continue;
-        } else if (content == "null") {
-            currentElement = new JsonElementNull();
-            box.active = true;
-        } else if (content == "true" || content == "false") {
-            currentElement = new JsonElementBool();
-            box.flag = content == "true";
-            box.active = true;
-        } else if (std::regex_match(content, number)) {
-            currentElement = new JsonElementNumber();
-            box.value = content;
-            box.active = true;
-        } else {
-            throw JsonException("json: bad_convert: " + content);
+            case 3:
+            case 4:
+            default:
+                ;
         }
-
-        currentElement->unifySetValue(box);
-        box.active = false;
 
         if (pJsonElement == nullptr) {
             pJsonElement = currentElement;
@@ -104,25 +76,46 @@ JsonElement *json::parse(std::string &text) {
     return pJsonElement;
 }
 
-json::element::JsonPiece decodePiece(char *&pCurrentChar) {
+// stop at end char
+json::element::JsonPiece json::decodePiece(char *&pCurrentChar) {
     static std::vector<char> endChar = {'}', ']', ',', '\0'};
     static std::vector<char> ignoreChar = {' ', '\n', '\r', '\t'};
     static std::regex numberReg = std::regex(R"(^(-)?\d+(\.\d+)?$)");
 
+    std::string content;
     auto box = JsonPiece();
     while (std::find(endChar.begin(), endChar.end(), *pCurrentChar) != endChar.end()) {
+        // skip blank char
+        if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) == ignoreChar.end()) {
+            pCurrentChar++;
+            continue;
+        }
+
+        // decode key or string value
+        if (*pCurrentChar == '"' && content.empty()) {
+            std::string res = json::innerQuote(pCurrentChar);
+            if (*pCurrentChar == ':') {
+                box.key = res;
+                box.parentType = 5;
+            } else {
+                box.value = res;
+                box.valueType = 3;
+                pCurrentChar++;
+                return box;
+            }
+        }
 
         pCurrentChar++;
     }
     return box;
 }
 
-std::string json::innerQuote(std::string &text, size_t &location) {
+std::string json::innerQuote(char *&pCurrentChar) {
     std::string result;
-    bool escape;
-    while (location != text.size()) {
-        char *pCurrentChar = &text.at(location);
-        location++;
+    bool escape = false;
+    // put ptr at first char which behind of end-quote
+    while (*pCurrentChar != '\0') {
+        pCurrentChar++;
 
         if (*pCurrentChar == '\\') {
             escape = !escape;
@@ -130,11 +123,12 @@ std::string json::innerQuote(std::string &text, size_t &location) {
             continue;
         }
         if (!escape && *pCurrentChar == '"') {
-            break;
+            pCurrentChar++;
+            return result;
         }
         result += *pCurrentChar;
     }
-    return result;
+    throw JsonException("json: no close quote.");
 }
 
 

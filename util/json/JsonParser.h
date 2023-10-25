@@ -50,9 +50,9 @@ namespace json {
         return obj;
     }
 
-    static json::element::JsonPiece decodePiece(char* pCurrentChar);
+    static json::element::JsonPiece decodePiece(char*& pCurrentChar);
 
-    static std::string innerQuote(std::string &text, std::size_t &location);
+    static std::string innerQuote(char*& pCurrentChar);
 
 
     class JsonException : public std::exception {
