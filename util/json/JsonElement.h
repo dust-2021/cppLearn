@@ -9,6 +9,23 @@
 #include "cstdint"
 
 namespace json::element {
+
+    // json element exception
+    class ElementException : public std::exception {
+    public:
+        std::string info;
+
+        ElementException() = default;
+
+        explicit ElementException(std::string &&info) : info(info) {};
+
+        explicit ElementException(std::string &info) : info(info) {};
+
+        [[nodiscard]] const char *what() const noexcept override {
+            return this->info.c_str();
+        };
+    };
+
     // haven't used, it's not necessary to set recursion depth.
     static const int8_t MAX_RECURSION_DEPTH = 50;
 
@@ -17,10 +34,7 @@ namespace json::element {
     // unification object for parse
     struct JsonPiece {
         std::string key;
-        std::string value;
-        bool flag = false;
-        int8_t parentType = 0;
-        int8_t valueType = 0;
+        JsonElement* value;
     };
 
     // base element class
@@ -37,7 +51,7 @@ namespace json::element {
         virtual JsonElement *getCopy() = 0;
 
         // initial object value
-        virtual void unifySetValue(JsonPiece &other) = 0;
+        virtual void parseAdd(JsonPiece &other) = 0;
 
         // return type code
         virtual int8_t typeCode() = 0;
@@ -62,7 +76,9 @@ namespace json::element {
             return obj;
         }
 
-        void unifySetValue(JsonPiece &other) override {};
+        void parseAdd(JsonPiece &other) override {
+            throw ElementException("json: not container");
+        };
 
         int8_t typeCode() override { return 1; };
 
@@ -91,8 +107,8 @@ namespace json::element {
             return new JsonElementBool(*this);
         }
 
-        void unifySetValue(JsonPiece &other) override {
-            this->value = other.flag;
+        void parseAdd(JsonPiece &other) override {
+            throw ElementException("json: not container");
         };
 
         int8_t typeCode() override { return 2; };
@@ -125,8 +141,8 @@ namespace json::element {
             return new JsonElementString(*this);
         }
 
-        void unifySetValue(JsonPiece &other) override {
-            this->value = other.value;
+        void parseAdd(JsonPiece &other) override {
+            throw ElementException("json: not container");
         };
 
         int8_t typeCode() override { return 3; };
@@ -156,8 +172,8 @@ namespace json::element {
             return new JsonElementNumber(*this);
         }
 
-        void unifySetValue(JsonPiece &other) override {
-            this->value = other.value;
+        void parseAdd(JsonPiece &other) override {
+            throw ElementException("json: not container");
         };
 
         int8_t typeCode() override { return 4; };
@@ -181,8 +197,8 @@ namespace json::element {
 
         JsonElementMap *getCopy() override;
 
-        void unifySetValue(JsonPiece &other) override {
-            this->childrenNode[other.key] = other.element->getCopy();
+        void parseAdd(JsonPiece &other) override {
+            this->childrenNode[other.key] = other.value;
         };
 
         int8_t typeCode() override { return 5; };
@@ -211,8 +227,8 @@ namespace json::element {
 
         JsonElementSequence *getCopy() override;
 
-        void unifySetValue(JsonPiece &other) override {
-            this->childrenNode.push_back(other.element->getCopy());
+        void parseAdd(JsonPiece &other) override {
+            this->childrenNode.push_back(other.value);
         };
 
         int8_t typeCode() override { return 6; };
@@ -222,22 +238,6 @@ namespace json::element {
         };
     private:
         std::vector<JsonElement *> childrenNode;
-    };
-
-    // json element exception
-    class ElementException : public std::exception {
-    public:
-        std::string info;
-
-        ElementException() = default;
-
-        explicit ElementException(std::string &&info) : info(info) {};
-
-        explicit ElementException(std::string &info) : info(info) {};
-
-        [[nodiscard]] const char *what() const noexcept override {
-            return this->info.c_str();
-        };
     };
 }
 

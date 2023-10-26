@@ -13,7 +13,7 @@ JsonElement *json::parse(std::string &text) {
 
     json::element::JsonPiece box;
     JsonElement *pJsonElement = nullptr;
-    JsonElement *currentElement = nullptr;
+    JsonElement *currentContainer = nullptr;
 
     std::stack<JsonElement *> container;
 
@@ -21,54 +21,45 @@ JsonElement *json::parse(std::string &text) {
     while (*pCurrentChar != '\n') {
 
         // ignore space
-        pCurrentChar++;
         if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) != ignoreChar.end()) {
+            pCurrentChar++;
             continue;
         }
 
         switch (*pCurrentChar) {
 
             case '{':
-                currentElement = new JsonElementMap();
+                currentContainer = new JsonElementMap();
                 break;
             case '[':
-                currentElement = new JsonElementSequence();
+                currentContainer = new JsonElementSequence();
                 break;
             case '}':
-                if (currentElement->typeCode() != 5) {
+                if (currentContainer->typeCode() != 5) {
                     throw JsonException("json: mismatched close char at " + std::to_string(*pCurrentChar));
                 }
-                currentElement = container.empty() ? container.top() : nullptr;
+                currentContainer = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             case ']':
-                if (currentElement->typeCode() != 6) {
-                    throw JsonException("json: mismatched close char at "+ std::to_string(*pCurrentChar));
+                if (currentContainer->typeCode() != 6) {
+                    throw JsonException("json: mismatched close char at " + std::to_string(*pCurrentChar));
                 }
-                currentElement = container.empty() ? container.top() : nullptr;
+                currentContainer = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             default:
+                // load an element, clear box
                 box = json::decodePiece(pCurrentChar);
-        }
-        switch (box.valueType) {
-            case 0:
-                continue;
-            case 1:
-                currentElement = new JsonElementNull();
-                currentElement->unifySetValue(box);
-                break;
-            case 2:
-
-            case 3:
-            case 4:
-            default:
-                ;
+                currentContainer->parseAdd(box);
+                box.value = nullptr;
+                box.key.clear();
         }
 
         if (pJsonElement == nullptr) {
-            pJsonElement = currentElement;
+            pJsonElement = currentContainer;
         }
+        pCurrentChar++;
     }
     if (!container.empty()) {
         throw JsonException("json: mismatched close char");
@@ -78,35 +69,51 @@ JsonElement *json::parse(std::string &text) {
 
 // stop at end char
 json::element::JsonPiece json::decodePiece(char *&pCurrentChar) {
-    static std::vector<char> endChar = {'}', ']', ',', '\0'};
+    static std::vector<char> endChar = {'[', '{', '}', ']', ',', '\0'};
     static std::vector<char> ignoreChar = {' ', '\n', '\r', '\t'};
     static std::regex numberReg = std::regex(R"(^(-)?\d+(\.\d+)?$)");
 
     std::string content;
     auto box = JsonPiece();
-    while (std::find(endChar.begin(), endChar.end(), *pCurrentChar) != endChar.end()) {
+
+    while (std::find(endChar.begin(), endChar.end(), *pCurrentChar) == endChar.end()) {
         // skip blank char
-        if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) == ignoreChar.end()) {
+        if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) != ignoreChar.end()) {
             pCurrentChar++;
             continue;
         }
 
         // decode key or string value
         if (*pCurrentChar == '"' && content.empty()) {
+
             std::string res = json::innerQuote(pCurrentChar);
             if (*pCurrentChar == ':') {
                 box.key = res;
-                box.parentType = 5;
-            } else {
-                box.value = res;
-                box.valueType = 3;
                 pCurrentChar++;
+                continue;
+            } else {
+                box.value = new JsonElementString(res);
                 return box;
             }
+
+        } else if (*pCurrentChar == '"') {
+            throw JsonException("json: unexpect '\"'");
         }
+
+        content += *pCurrentChar;
 
         pCurrentChar++;
     }
+
+    if (content == "null") {
+        box.value = new JsonElementNull();
+    } else if (std::regex_match(content, numberReg)) {
+        box.value = new JsonElementNumber(content);
+    } else if (content == "true" or content == "false") {
+        box.value = new JsonElementBool(content == "true");
+    }
+
+
     return box;
 }
 

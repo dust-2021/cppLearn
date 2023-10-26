@@ -7,39 +7,41 @@
 #include "functional"
 #include "unordered_map"
 
-void func(){
-    std::fstream f("/code/cppCode/firstProject/test/data.json");
+json::element::JsonElement *func() {
+    std::ifstream f("/code/cppCode/firstProject/test/data.json");
     std::string res;
-    if (f){
-        printf("opening");
+    if (f) {
+        printf("opening\n");
         std::string line;
-        while (std::getline(f,line )){
+        while (std::getline(f, line)) {
             res += line;
         }
-    } else{
+    } else {
         std::cout << "open failed\n";
     }
-    std::cout<< res << '\n';
+    std::cout << res << '\n';
     auto result = json::parse(res);
+    return result;
 }
 
-void func2(){
-    auto data = std::unordered_map<std::string, int> {{"age", 12}, {"loc", 13}};
+void func2() {
+    auto data = std::unordered_map<std::string, int>{{"age", 12},
+                                                     {"loc", 13}};
     data["name"];
     data["name"] = 11;
     std::cout << data["name"] << '\n';
 }
 
-void func3(){
+void func3() {
     std::string str = "12345";
-    const char * p = str.c_str();
-    while (*p != '\0'){
+    const char *p = str.c_str();
+    while (*p != '\0') {
         std::cout << *p << '\n';
         p++;
     }
 }
 
 int main() {
-    func3();
-
+    auto data = func();
+    std::cout << data->dump() << '\n';
 }
