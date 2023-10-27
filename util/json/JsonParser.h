@@ -42,7 +42,7 @@ namespace json {
     }
 
     template<class T>
-    element::JsonElement *load(std::unordered_map<std::string, T> any){
+    element::JsonElement *load(std::unordered_map<std::string, T> any) {
         auto obj = new element::JsonElementMap();
         for (auto pair: any) {
             obj[pair.first] = load(pair.second);
@@ -50,9 +50,9 @@ namespace json {
         return obj;
     }
 
-    static json::element::JsonPiece decodePiece(char*& pCurrentChar);
+    static json::element::JsonPiece decodePiece(char *&pCurrentChar);
 
-    static std::string innerQuote(char*& pCurrentChar);
+    static std::string innerQuote(char *&pCurrentChar);
 
 
     class JsonException : public std::exception {
@@ -68,6 +68,14 @@ namespace json {
         [[nodiscard]] const char *what() const noexcept override {
             return this->info.c_str();
         };
+    };
+}
+namespace json::parser {
+    class Parser {
+    public:
+        std::string content;
+
+    private:
     };
 }
 #endif //FIRSTPROJECT_JSONPARSER_H
