@@ -42,6 +42,9 @@ void func3() {
 }
 
 int main() {
-    auto data = func();
-    std::cout << data->dump() << '\n';
+    int * a ;
+    int b = 12;
+    a = &b;
+    std::cout << (long ) a << '\n';
+
 }
