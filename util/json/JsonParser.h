@@ -70,12 +70,4 @@ namespace json {
         };
     };
 }
-namespace json::parser {
-    class Parser {
-    public:
-        std::string content;
-
-    private:
-    };
-}
 #endif //FIRSTPROJECT_JSONPARSER_H

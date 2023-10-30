@@ -10,20 +10,29 @@ JsonElement *json::parse(std::string &text) {
     static std::vector<char> ignoreChar = {' ', '\n', '\r', '\t'};
     static std::regex number = std::regex(R"(^(\d+)(\.\d+)?)");
     char *pCurrentChar = &*text.begin();
+    size_t location = -1;
 
     json::element::JsonPiece box;
     JsonElement *pJsonElement = nullptr;
     JsonElement *currentContainer = nullptr;
 
+    std::string mem;
+    bool endPiece = false;
+
     std::stack<JsonElement *> container;
 
     // main loop
-    while (*pCurrentChar != '\n') {
+    while (*pCurrentChar != '\0') {
+        location++;
 
         // ignore space
         if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) != ignoreChar.end()) {
             pCurrentChar++;
             continue;
+        }
+
+        if (endPiece){
+
         }
 
         switch (*pCurrentChar) {
@@ -36,17 +45,24 @@ JsonElement *json::parse(std::string &text) {
                 break;
             case '}':
                 if (currentContainer->typeCode() != 5) {
-                    throw JsonException("json: mismatched close char at " + std::to_string(*pCurrentChar));
+                    throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
                 currentContainer = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             case ']':
                 if (currentContainer->typeCode() != 6) {
-                    throw JsonException("json: mismatched close char at " + std::to_string(*pCurrentChar));
+                    throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
                 currentContainer = container.empty() ? container.top() : nullptr;
                 container.pop();
+                break;
+            case '"':
+                if (!mem.empty()) {
+                    throw JsonException("json: unexpect \" at " + std::to_string(location));
+                }
+                mem = innerQuote(pCurrentChar);
+                endPiece = true;
                 break;
             default:
                 // load an element, clear box
