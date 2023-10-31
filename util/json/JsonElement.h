@@ -198,6 +198,9 @@ namespace json::element {
         JsonElementMap *getCopy() override;
 
         void parseAdd(JsonPiece &other) override {
+            if (other.key.empty()){
+                throw ElementException("json: key lost");
+            }
             this->childrenNode[other.key] = other.value;
         };
 
@@ -206,7 +209,6 @@ namespace json::element {
         JsonElement* operator[](std::string& key){
             return this->childrenNode[key];
         }
-
 
     private:
         std::unordered_map<std::string, JsonElement *> childrenNode;
