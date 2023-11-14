@@ -26,8 +26,8 @@ namespace json::element {
         };
     };
 
-    // haven't used, it's not necessary to set recursion depth.
-    static const int8_t MAX_RECURSION_DEPTH = 50;
+    // 递归深度
+    [[maybe_unused]] static const int8_t MAX_RECURSION_DEPTH = 50;
 
     class JsonElement;
 

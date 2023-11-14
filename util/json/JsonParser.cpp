@@ -5,138 +5,81 @@
 #include "cstdint"
 
 using namespace json::element;
+std::regex json::parser::Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
+std::vector<char> json::parser::Parser::ignoreChar = {' ', '\n', '\r', '\t'};
 
-JsonElement *json::parse(std::string &text) {
-    static std::vector<char> ignoreChar = {' ', '\n', '\r', '\t'};
-    static std::regex number = std::regex(R"(^(\d+)(\.\d+)?)");
-    char *pCurrentChar = &*text.begin();
-    size_t location = -1;
-
-    json::element::JsonPiece box;
-    JsonElement *pJsonElement = nullptr;
-    JsonElement *currentContainer = nullptr;
-
-    std::string mem;
-    bool endPiece = false;
-
-    std::stack<JsonElement *> container;
+JsonElement *json::parser::Parser::parse() {
 
     // main loop
-    while (*pCurrentChar != '\0') {
+    while (*currentPtr != '\0') {
         location++;
 
-        // ignore space
-        if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) != ignoreChar.end()) {
-            pCurrentChar++;
+        // 跳过空字符
+        if (std::find(ignoreChar.begin(), ignoreChar.end(), *currentPtr) != ignoreChar.end()) {
+            this->currentPtr++;
+
+            if (!this->memoryString.empty()) {
+                afterIgnore = true;
+            }
             continue;
         }
 
-        if (endPiece){
-
+        // check char
+        if (design && std::find(designChar.begin(), designChar.end(), *currentPtr) == designChar.end()) {
+            throw JsonException("json: expect char at " + std::to_string(location));
+        } else {
+            design = false;
         }
 
-        switch (*pCurrentChar) {
+        switch (*currentPtr) {
 
             case '{':
-                currentContainer = new JsonElementMap();
+                currentElement = new JsonElementMap();
                 break;
             case '[':
-                currentContainer = new JsonElementSequence();
+                currentElement = new JsonElementSequence();
                 break;
             case '}':
-                if (currentContainer->typeCode() != 5) {
+                if (currentElement->typeCode() != 5) {
                     throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
-                currentContainer = container.empty() ? container.top() : nullptr;
+                currentElement = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             case ']':
-                if (currentContainer->typeCode() != 6) {
+                if (currentElement->typeCode() != 6) {
                     throw JsonException("json: mismatched close char at " + std::to_string(location));
                 }
-                currentContainer = container.empty() ? container.top() : nullptr;
+                currentElement = container.empty() ? container.top() : nullptr;
                 container.pop();
                 break;
             case '"':
-                if (!mem.empty()) {
+                if (!memoryString.empty()) {
                     throw JsonException("json: unexpect \" at " + std::to_string(location));
                 }
-                mem = innerQuote(pCurrentChar);
-                endPiece = true;
+                memoryString = innerQuote(currentPtr);
+                design = true;
+                designChar = {':'};
                 break;
-            default:
-                // load an element, clear box
-                box = json::decodePiece(pCurrentChar);
-                currentContainer->parseAdd(box);
-                box.value = nullptr;
-                box.key.clear();
+            default:;
         }
 
-        if (pJsonElement == nullptr) {
-            pJsonElement = currentContainer;
+        if (result == nullptr) {
+            result = currentElement;
         }
-        pCurrentChar++;
+        currentPtr++;
     }
     if (!container.empty()) {
         throw JsonException("json: mismatched close char");
     }
-    return pJsonElement;
+    return result;
 }
 
-// stop at end char
-json::element::JsonPiece json::decodePiece(char *&pCurrentChar) {
-    static std::vector<char> endChar = {'[', '{', '}', ']', ',', '\0'};
-    static std::vector<char> ignoreChar = {' ', '\n', '\r', '\t'};
-    static std::regex numberReg = std::regex(R"(^(-)?\d+(\.\d+)?$)");
-
-    std::string content;
-    auto box = JsonPiece();
-
-    while (std::find(endChar.begin(), endChar.end(), *pCurrentChar) == endChar.end()) {
-        // skip blank char
-        if (std::find(ignoreChar.begin(), ignoreChar.end(), *pCurrentChar) != ignoreChar.end()) {
-            pCurrentChar++;
-            continue;
-        }
-
-        // decode key or string value
-        if (*pCurrentChar == '"' && content.empty()) {
-
-            std::string res = json::innerQuote(pCurrentChar);
-            if (*pCurrentChar == ':') {
-                box.key = res;
-                pCurrentChar++;
-                continue;
-            } else {
-                box.value = new JsonElementString(res);
-                return box;
-            }
-
-        } else if (*pCurrentChar == '"') {
-            throw JsonException("json: unexpect '\"'");
-        }
-
-        content += *pCurrentChar;
-
-        pCurrentChar++;
-    }
-
-    if (content == "null") {
-        box.value = new JsonElementNull();
-    } else if (std::regex_match(content, numberReg)) {
-        box.value = new JsonElementNumber(content);
-    } else if (content == "true" or content == "false") {
-        box.value = new JsonElementBool(content == "true");
-    }
-
-
-    return box;
-}
-
-std::string json::innerQuote(char *&pCurrentChar) {
+// 解析双引号内内容
+std::string json::parser::Parser::innerQuote(char *&pCurrentChar) {
     std::string result;
     bool escape = false;
-    // put ptr at first char which behind of end-quote
+    // 字符指针留在结束引号后一位
     while (*pCurrentChar != '\0') {
         pCurrentChar++;
 
@@ -154,6 +97,16 @@ std::string json::innerQuote(char *&pCurrentChar) {
     throw JsonException("json: no close quote.");
 }
 
+char json::parser::Parser::checkNextChar() {
+    char *_temp = this->currentPtr;
+    while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()){
+        if (*_temp == '\0'){
+            throw JsonException("json: no next char");
+        }
+        _temp++;
+    }
+    return *_temp;
+}
 
 
 
