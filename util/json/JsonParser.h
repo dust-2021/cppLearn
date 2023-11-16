@@ -13,16 +13,6 @@ namespace json {
         return new element::JsonElementNumber(std::to_string(any));
     }
 
-    // convert obj to json obj
-//    template<> element::JsonElement *load<std::string>(std::string &any) {
-//        return new element::JsonElementString(any);
-//    }
-
-//    element::JsonElement *load() {
-//        return new element::JsonElementNull();
-//    }
-
-
     template<class T>
     element::JsonElement *load(std::vector<T> any) {
         auto obj = new element::JsonElementSequence();

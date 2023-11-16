@@ -24,10 +24,14 @@ void func3() {
     }
 }
 
-int main() {
-    int * a ;
-    int b = 12;
-    a = &b;
-    std::cout << a << '\n';
+void func3(int *a) {
+    std::cout << &a << '\n';
+}
 
+int main() {
+    int a = 1;
+    int *b = &a;
+    std::cout << &b << '\n';
+    func3(b);
+    return 0;
 }
