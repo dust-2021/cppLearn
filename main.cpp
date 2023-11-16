@@ -29,9 +29,13 @@ void func3(int *a) {
 }
 
 int main() {
-    int a = 1;
-    int *b = &a;
-    std::cout << &b << '\n';
-    func3(b);
+    auto a = new json::element::JsonElementSequence();
+    auto ele = new json::element::JsonElementString("123");
+    a->push_back(ele);
+    auto b = a->getCopy();
+    auto c = json::element::JsonElementSequence(*a);
+    b->push_back(a);
+    c.push_back(a);
+    std::cout << a->dump() << '\n' << b->dump() << '\n' << c.dump() << '\n';
     return 0;
 }

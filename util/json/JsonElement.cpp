@@ -33,7 +33,7 @@ std::string JsonElementMap::dump() const {
 }
 
 JsonElementMap *JsonElementMap::getCopy() {
-    auto temp = new JsonElementMap(*this);
+    auto temp = new JsonElementMap();
     for (const auto &pair: this->childrenNode) {
         temp->childrenNode[pair.first] = pair.second->getCopy();
     }
@@ -66,7 +66,7 @@ std::string JsonElementSequence::dump() const {
 }
 
 JsonElementSequence *JsonElementSequence::getCopy() {
-    auto temp = new JsonElementSequence(*this);
+    auto temp = new JsonElementSequence();
     for (auto pair: this->childrenNode) {
         temp->childrenNode.push_back(pair->getCopy());
     }
