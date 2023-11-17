@@ -21,9 +21,7 @@ namespace json::element {
 
         explicit ElementException(std::string &info) : info(info) {};
 
-        [[nodiscard]] const char *what() const noexcept override {
-            return this->info.c_str();
-        };
+        [[nodiscard]] const char *what() const noexcept override { return this->info.c_str(); };
     };
 
     // 递归深度
@@ -34,7 +32,7 @@ namespace json::element {
     // unification object for parse
     struct JsonPiece {
         std::string key;
-        JsonElement* value;
+        JsonElement *value;
     };
 
     // base element class
@@ -58,6 +56,7 @@ namespace json::element {
 
     private:
     };
+
     // null class
     class JsonElementNull : public JsonElement {
 
@@ -71,14 +70,9 @@ namespace json::element {
 
         [[nodiscard]] std::string dump() const override { return "null"; };
 
-        JsonElementNull *getCopy() override {
-            auto obj = new JsonElementNull(*this);
-            return obj;
-        }
+        JsonElementNull *getCopy() override { return new JsonElementNull(*this); }
 
-        void parseAdd(JsonPiece &other) override {
-            throw ElementException("json: not container");
-        };
+        void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
         int8_t typeCode() override { return 1; };
 
@@ -95,21 +89,15 @@ namespace json::element {
 
         JsonElementBool(JsonElementBool &other) = default;
 
-        explicit JsonElementBool(bool &&value) {
-            this->value = value;
-        };
+        explicit JsonElementBool(bool &&value) { this->value = value; };
 
         ~JsonElementBool() override = default;
 
         [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
 
-        JsonElementBool *getCopy() override {
-            return new JsonElementBool(*this);
-        }
+        JsonElementBool *getCopy() override { return new JsonElementBool(*this); }
 
-        void parseAdd(JsonPiece &other) override {
-            throw ElementException("json: not container");
-        };
+        void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
         int8_t typeCode() override { return 2; };
     private:
@@ -127,23 +115,15 @@ namespace json::element {
 
         ~JsonElementString() override = default;
 
-        explicit JsonElementString(std::string &text) {
-            this->value = text;
-        };
+        explicit JsonElementString(std::string &text) { this->value = text; };
 
-        explicit JsonElementString(std::string &&text) {
-            this->value = text;
-        };
+        explicit JsonElementString(std::string &&text) { this->value = text; };
 
         [[nodiscard]] std::string dump() const override { return '"' + this->value + '"'; };
 
-        JsonElementString *getCopy() override {
-            return new JsonElementString(*this);
-        }
+        JsonElementString *getCopy() override { return new JsonElementString(*this); }
 
-        void parseAdd(JsonPiece &other) override {
-            throw ElementException("json: not container");
-        };
+        void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
         int8_t typeCode() override { return 3; };
 
@@ -158,9 +138,7 @@ namespace json::element {
 
         JsonElementNumber() = default;
 
-        explicit JsonElementNumber(std::string &text) {
-            this->value = text;
-        };
+        explicit JsonElementNumber(std::string &text) { this->value = text; };
 
         JsonElementNumber(JsonElementNumber &other) = default;
 
@@ -168,13 +146,9 @@ namespace json::element {
 
         [[nodiscard]] std::string dump() const override { return this->value; };
 
-        JsonElementNumber *getCopy() override {
-            return new JsonElementNumber(*this);
-        }
+        JsonElementNumber *getCopy() override { return new JsonElementNumber(*this); }
 
-        void parseAdd(JsonPiece &other) override {
-            throw ElementException("json: not container");
-        };
+        void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
         int8_t typeCode() override { return 4; };
 
@@ -195,20 +169,13 @@ namespace json::element {
 
         [[nodiscard]] std::string dump() const override;
 
-        JsonElementMap *getCopy() override;
+        JsonElementMap *getCopy() override { return new JsonElementMap(*this); };
 
-        void parseAdd(JsonPiece &other) override {
-            if (other.key.empty()){
-                throw ElementException("json: key lost");
-            }
-            this->childrenNode[other.key] = other.value;
-        };
+        void parseAdd(JsonPiece &other) override;
 
         int8_t typeCode() override { return 5; };
 
-        JsonElement* operator[](std::string& key){
-            return this->childrenNode[key];
-        }
+        JsonElement *operator[](std::string &key) { return this->childrenNode[key]; }
 
     private:
         std::unordered_map<std::string, JsonElement *> childrenNode;
@@ -227,17 +194,13 @@ namespace json::element {
 
         [[nodiscard]] std::string dump() const override;
 
-        JsonElementSequence *getCopy() override;
+        JsonElementSequence *getCopy() override { return new JsonElementSequence(*this); };
 
-        void parseAdd(JsonPiece &other) override {
-            this->childrenNode.push_back(other.value);
-        };
+        void parseAdd(JsonPiece &other) override { this->childrenNode.push_back(other.value); };
 
         int8_t typeCode() override { return 6; };
 
-        void push_back(JsonElement* other){
-            this->childrenNode.push_back(other->getCopy());
-        };
+        void push_back(JsonElement *other) { this->childrenNode.push_back(other->getCopy()); };
     private:
         std::vector<JsonElement *> childrenNode;
     };

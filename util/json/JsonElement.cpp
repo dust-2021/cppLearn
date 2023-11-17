@@ -12,7 +12,7 @@ JsonElementMap::JsonElementMap(JsonElementMap &other) {
     }
 }
 
-// delete all children element
+// 递归调用子元素析构
 JsonElementMap::~JsonElementMap() {
     for (auto &pair: this->childrenNode) {
         delete pair.second;
@@ -32,12 +32,11 @@ std::string JsonElementMap::dump() const {
     return result;
 }
 
-JsonElementMap *JsonElementMap::getCopy() {
-    auto temp = new JsonElementMap();
-    for (const auto &pair: this->childrenNode) {
-        temp->childrenNode[pair.first] = pair.second->getCopy();
+void JsonElementMap::parseAdd(json::element::JsonPiece &other) {
+    if (other.key.empty()) {
+        throw ElementException("json: key lost");
     }
-    return temp;
+    this->childrenNode[other.key] = other.value;
 }
 
 JsonElementSequence::JsonElementSequence(JsonElementSequence &other) {
@@ -65,10 +64,3 @@ std::string JsonElementSequence::dump() const {
     return result;
 }
 
-JsonElementSequence *JsonElementSequence::getCopy() {
-    auto temp = new JsonElementSequence();
-    for (auto pair: this->childrenNode) {
-        temp->childrenNode.push_back(pair->getCopy());
-    }
-    return temp;
-}

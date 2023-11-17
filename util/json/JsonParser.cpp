@@ -2,13 +2,13 @@
 #include "JsonParser.h"
 #include "sstream"
 #include "stack"
-#include "cstdint"
 
 using namespace json::element;
-std::regex json::parser::Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
-std::vector<char> json::parser::Parser::ignoreChar = {' ', '\n', '\r', '\t'};
+using namespace json::parser;
+std::regex Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
+std::vector<char> Parser::ignoreChar = {' ', '\n', '\r', '\t'};
 
-JsonElement *json::parser::Parser::parse() {
+JsonElement *Parser::parse() {
 
     // main loop
     while (*currentPtr != '\0') {
@@ -31,38 +31,7 @@ JsonElement *json::parser::Parser::parse() {
             design = false;
         }
 
-        switch (*currentPtr) {
-
-            case '{':
-                currentElement = new JsonElementMap();
-                break;
-            case '[':
-                currentElement = new JsonElementSequence();
-                break;
-            case '}':
-                if (currentElement->typeCode() != 5) {
-                    throw JsonException("json: mismatched close char at " + std::to_string(location));
-                }
-                currentElement = container.empty() ? container.top() : nullptr;
-                container.pop();
-                break;
-            case ']':
-                if (currentElement->typeCode() != 6) {
-                    throw JsonException("json: mismatched close char at " + std::to_string(location));
-                }
-                currentElement = container.empty() ? container.top() : nullptr;
-                container.pop();
-                break;
-            case '"':
-                if (!memoryString.empty()) {
-                    throw JsonException("json: unexpect \" at " + std::to_string(location));
-                }
-                memoryString = innerQuote(currentPtr);
-                design = true;
-                designChar = {':'};
-                break;
-            default:;
-        }
+        charSwitch();
 
         if (result == nullptr) {
             result = currentElement;
@@ -76,7 +45,7 @@ JsonElement *json::parser::Parser::parse() {
 }
 
 // 解析双引号内内容
-std::string json::parser::Parser::innerQuote(char *&pCurrentChar) {
+std::string Parser::innerQuote(char *&pCurrentChar) {
     std::string result;
     bool escape = false;
     // 字符指针留在结束引号后一位
@@ -97,10 +66,10 @@ std::string json::parser::Parser::innerQuote(char *&pCurrentChar) {
     throw JsonException("json: no close quote.");
 }
 
-char json::parser::Parser::checkNextChar() {
+char Parser::checkNextChar() {
     char *_temp = this->currentPtr;
-    while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()){
-        if (*_temp == '\0'){
+    while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()) {
+        if (*_temp == '\0') {
             throw JsonException("json: no next char");
         }
         _temp++;
@@ -108,5 +77,40 @@ char json::parser::Parser::checkNextChar() {
     return *_temp;
 }
 
+void Parser::charSwitch() {
+    memoryString.clear();
+    switch (*currentPtr) {
+
+        case '{':
+            currentElement = new JsonElementMap();
+            break;
+        case '[':
+            currentElement = new JsonElementSequence();
+            break;
+        case '}':
+            if (currentElement->typeCode() != 5) {
+                throw JsonException("json: mismatched close char at " + std::to_string(location));
+            }
+            currentElement = container.empty() ? container.top() : nullptr;
+            container.pop();
+            break;
+        case ']':
+            if (currentElement->typeCode() != 6) {
+                throw JsonException("json: mismatched close char at " + std::to_string(location));
+            }
+            currentElement = container.empty() ? container.top() : nullptr;
+            container.pop();
+            break;
+        case '"':
+            if (!memoryString.empty()) {
+                throw JsonException("json: unexpect \" at " + std::to_string(location));
+            }
+            memoryString = innerQuote(currentPtr);
+            design = true;
+            designChar = {':'};
+            break;
+        default:;
+    }
+}
 
 
