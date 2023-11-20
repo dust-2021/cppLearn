@@ -38,7 +38,7 @@ namespace json::parser {
         void charSwitch();
 
     private:
-        // 待解析字符串
+        // 待解析字符串   `
         std::string _text;
 
         // 解析结果
