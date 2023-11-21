@@ -26,16 +26,12 @@ namespace json::parser {
     public:
         static std::vector<char> ignoreChar;
         static std::regex numberReg;
+        static std::vector<char> endPiece;
 
         explicit Parser(std::string &text) : _text(text) {};
 
         json::element::JsonElement *parse();
 
-        static std::string innerQuote(char *&pChar);
-
-        char checkNextChar();
-
-        void charSwitch();
 
     private:
         // 待解析字符串   `
@@ -64,6 +60,12 @@ namespace json::parser {
 
         // 嵌套容器存储
         std::stack<json::element::JsonElement *> container;
+
+        void charSwitch();
+
+        char checkNextChar();
+
+        static std::string innerQuote(char *&pChar);
     };
 }
 #endif //FIRSTPROJECT_JSONPARSER_H

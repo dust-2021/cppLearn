@@ -7,6 +7,12 @@ using namespace json::element;
 using namespace json::parser;
 std::regex Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
 std::vector<char> Parser::ignoreChar = {' ', '\n', '\r', '\t'};
+std::vector<char> Parser::endPiece = {'\n', '}', ']', ',', ':'};
+
+JsonElement* json::parse(std::string &text) {
+  auto parser = Parser(text);
+    return parser.parse();
+};
 
 JsonElement *Parser::parse() {
 
@@ -68,9 +74,10 @@ std::string Parser::innerQuote(char *&pCurrentChar) {
 
 char Parser::checkNextChar() {
     char *_temp = this->currentPtr;
+    _temp++;
     while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()) {
         if (*_temp == '\0') {
-            throw JsonException("json: no next char");
+            return '\0';
         }
         _temp++;
     }
@@ -78,6 +85,9 @@ char Parser::checkNextChar() {
 }
 
 void Parser::charSwitch() {
+    /*
+     *
+     */
     memoryString.clear();
     switch (*currentPtr) {
 
