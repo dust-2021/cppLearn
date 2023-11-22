@@ -72,7 +72,7 @@ std::string Parser::innerQuote(char *&pCurrentChar) {
     throw JsonException("json: no close quote.");
 }
 
-char Parser::checkNextChar() {
+char Parser::checkNextChar() const {
     char *_temp = this->currentPtr;
     _temp++;
     while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()) {
@@ -91,6 +91,7 @@ void Parser::charSwitch() {
     memoryString.clear();
     switch (*currentPtr) {
 
+        //
         case '{':
             currentElement = new JsonElementMap();
             break;

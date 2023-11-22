@@ -63,9 +63,9 @@ namespace json::parser {
 
         void charSwitch();
 
-        char checkNextChar();
+        [[nodiscard]] char checkNextChar() const;
 
-        static std::string innerQuote(char *&pChar);
+        static std::string innerQuote(char *&pCurrentChar);
     };
 }
 #endif //FIRSTPROJECT_JSONPARSER_H
