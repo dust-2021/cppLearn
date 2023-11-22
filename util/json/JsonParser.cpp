@@ -9,8 +9,8 @@ std::regex Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
 std::vector<char> Parser::ignoreChar = {' ', '\n', '\r', '\t'};
 std::vector<char> Parser::endPiece = {'\n', '}', ']', ',', ':'};
 
-JsonElement* json::parse(std::string &text) {
-  auto parser = Parser(text);
+JsonElement *json::parse(std::string &text) {
+    auto parser = Parser(text);
     return parser.parse();
 };
 
@@ -23,20 +23,10 @@ JsonElement *Parser::parse() {
         // 跳过空字符
         if (std::find(ignoreChar.begin(), ignoreChar.end(), *currentPtr) != ignoreChar.end()) {
             this->currentPtr++;
-
-            if (!this->memoryString.empty()) {
-                afterIgnore = true;
-            }
             continue;
         }
 
-        // check char
-        if (design && std::find(designChar.begin(), designChar.end(), *currentPtr) == designChar.end()) {
-            throw JsonException("json: expect char at " + std::to_string(location));
-        } else {
-            design = false;
-        }
-
+        // 根据字符判断后续解析行为
         charSwitch();
 
         if (result == nullptr) {
@@ -47,10 +37,13 @@ JsonElement *Parser::parse() {
     if (!container.empty()) {
         throw JsonException("json: mismatched close char");
     }
+
+    if(result == nullptr){
+        return new JsonElementString("");
+    }
     return result;
 }
 
-// 解析双引号内内容
 std::string Parser::innerQuote(char *&pCurrentChar) {
     std::string result;
     bool escape = false;
@@ -91,13 +84,21 @@ void Parser::charSwitch() {
     memoryString.clear();
     switch (*currentPtr) {
 
-        //
+            // 进入子map元素
         case '{':
-            currentElement = new JsonElementMap();
+            temp = new JsonElementMap();
+            box.value = temp;
+            currentElement->parseAdd(box);
+            currentElement = temp;
             break;
+            // 进入子list元素
         case '[':
-            currentElement = new JsonElementSequence();
+            temp = new JsonElementSequence();
+            box.value = temp;
+            currentElement->parseAdd(box);
+            currentElement = temp;
             break;
+            // 退出map元素
         case '}':
             if (currentElement->typeCode() != 5) {
                 throw JsonException("json: mismatched close char at " + std::to_string(location));
@@ -105,6 +106,7 @@ void Parser::charSwitch() {
             currentElement = container.empty() ? container.top() : nullptr;
             container.pop();
             break;
+            // 退出list元素
         case ']':
             if (currentElement->typeCode() != 6) {
                 throw JsonException("json: mismatched close char at " + std::to_string(location));
@@ -117,11 +119,20 @@ void Parser::charSwitch() {
                 throw JsonException("json: unexpect \" at " + std::to_string(location));
             }
             memoryString = innerQuote(currentPtr);
-            design = true;
-            designChar = {':'};
+            if (typeid(currentElement) == typeid(JsonElementMap) && checkNextChar() == ':'){
+                box.key = memoryString;
+            } else{
+                throw JsonException("except ':' after a key");
+            }
             break;
-        default:;
+        default:
+            throw JsonException("not excepted char at " + std::to_string(location));
     }
 }
 
+void Parser::normalParse() {
+    memoryString.clear();
+    while (memoryString.length() < 50 && *currentPtr != '\0'){
 
+    }
+}

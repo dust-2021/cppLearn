@@ -29,10 +29,18 @@ namespace json::element {
 
     class JsonElement;
 
-    // unification object for parse
+    // 解析json时的通用生成json对象的数据类型 被parseAdd函数解析
     struct JsonPiece {
+        bool read = false;
         std::string key;
         JsonElement *value;
+
+        // 重置结构体
+        void clear() {
+            read = false;
+            key.clear();
+            value = nullptr;
+        }
     };
 
     // base element class
@@ -51,8 +59,7 @@ namespace json::element {
         // initial object value
         virtual void parseAdd(JsonPiece &other) = 0;
 
-        // return type code
-        virtual int8_t typeCode() = 0;
+        [[nodiscard]] virtual int8_t typeCode() const = 0;
 
     private:
     };
@@ -74,7 +81,7 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
-        int8_t typeCode() override { return 1; };
+        [[nodiscard]] int8_t typeCode() const override { return 1; };
 
     private:
 
@@ -83,7 +90,6 @@ namespace json::element {
     // logistic class
     class JsonElementBool : public JsonElement {
     public:
-
 
         JsonElementBool() = default;
 
@@ -99,7 +105,7 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
-        int8_t typeCode() override { return 2; };
+        [[nodiscard]] int8_t typeCode() const override { return 2; };
     private:
         bool value = false;
     };
@@ -107,7 +113,6 @@ namespace json::element {
     // string class
     class JsonElementString : public JsonElement {
     public:
-
 
         JsonElementString() = default;
 
@@ -125,7 +130,7 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
-        int8_t typeCode() override { return 3; };
+        [[nodiscard]] int8_t typeCode() const override { return 3; };
 
     private:
         std::string value;
@@ -134,7 +139,6 @@ namespace json::element {
     // number class
     class JsonElementNumber : public JsonElement {
     public:
-
 
         JsonElementNumber() = default;
 
@@ -150,7 +154,7 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
-        int8_t typeCode() override { return 4; };
+        [[nodiscard]] int8_t typeCode() const override { return 4; };
 
     private:
         std::string value;
@@ -159,7 +163,6 @@ namespace json::element {
     // map class
     class JsonElementMap : public JsonElement {
     public:
-
 
         JsonElementMap() = default;
 
@@ -173,9 +176,9 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override;
 
-        int8_t typeCode() override { return 5; };
-
         JsonElement *operator[](std::string &key) { return this->childrenNode[key]; }
+
+        [[nodiscard]] int8_t typeCode() const override { return 5; };
 
     private:
         std::unordered_map<std::string, JsonElement *> childrenNode;
@@ -184,7 +187,6 @@ namespace json::element {
     // sequence class
     class JsonElementSequence : public JsonElement {
     public:
-
 
         JsonElementSequence() = default;
 
@@ -198,9 +200,9 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override { this->childrenNode.push_back(other.value); };
 
-        int8_t typeCode() override { return 6; };
-
         void push_back(JsonElement *other) { this->childrenNode.push_back(other->getCopy()); };
+
+        [[nodiscard]] int8_t typeCode() const override { return 6; };
     private:
         std::vector<JsonElement *> childrenNode;
     };

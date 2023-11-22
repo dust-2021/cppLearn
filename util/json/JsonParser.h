@@ -28,7 +28,7 @@ namespace json::parser {
         static std::regex numberReg;
         static std::vector<char> endPiece;
 
-        explicit Parser(std::string &text) : _text(text) {};
+        explicit Parser(std::string &text) : _text(text) {currentPtr = text.c_str();};
 
         json::element::JsonElement *parse();
 
@@ -42,17 +42,17 @@ namespace json::parser {
         // 当前json元素
         json::element::JsonElement *currentElement = nullptr;
 
+        // 临时切换对象
+        json::element::JsonElement* temp = nullptr;
+
         // 当前字符
-        char *currentPtr = nullptr;
+        const char *currentPtr = nullptr;
         // 当前字符位置
         size_t location = 0;
         // 缓存字符串
         std::string memoryString;
         // 跳过字符标识
         bool afterIgnore = false;
-
-        // 指定标识
-        bool design = false;
         // 指定字符
         std::vector<char> designChar;
         // 初始化json元素的
@@ -61,11 +61,16 @@ namespace json::parser {
         // 嵌套容器存储
         std::stack<json::element::JsonElement *> container;
 
+        // 解析双引号内容
+        static std::string innerQuote(char *&pCurrentChar);
+
+        // 读取非引号内字符
+        void normalParse();
+
         void charSwitch();
 
+        // 检查下一个有效字符
         [[nodiscard]] char checkNextChar() const;
-
-        static std::string innerQuote(char *&pCurrentChar);
     };
 }
 #endif //FIRSTPROJECT_JSONPARSER_H

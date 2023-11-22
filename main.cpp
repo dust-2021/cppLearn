@@ -31,10 +31,7 @@ void func3(int* a) {
 }
 
 int main() {
-    int a = 4;
-    const int* p = &a;
-    const int* temp = p;
-    std::cout << p << ' ' << temp << '\n';
-    p++;
-    std::cout << p << ' ' << temp << '\n';
+    std::string text = R"({"name": "Tom", "age": 12.2, "product": [""]})";
+    auto json_obj = json::parse(text);
+    std::cout << json_obj->dump() << '\n';
 }
