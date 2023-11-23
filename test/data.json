@@ -1,0 +1,17 @@
+{
+  "name": "Mic\"123",
+  "age": 10.2,
+  "products": [
+    {
+      "type": "car",
+      "price": 100000000,
+      "name": null
+    },
+    {
+      "salary": 10000
+    },
+    {
+      "deposit": -1234.009
+    }
+  ]
+}

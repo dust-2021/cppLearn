@@ -1,4 +1,5 @@
 #include <iostream>
+#include <utility>
 #include "fstream"
 #include "util/json/JsonElement.h"
 #include "util/json/JsonParser.h"
@@ -7,31 +8,18 @@
 #include "functional"
 #include "unordered_map"
 
-void func2() {
-    auto data = std::unordered_map<std::string, int>{
-        {"age", 12},
-        {"loc", 13}
-    };
-    data["name"];
-    data["name"] = 11;
-    std::cout << data["name"] << '\n';
-}
-
-void func3() {
-    std::string str = "12345";
-    const char* p = str.c_str();
-    while (*p != '\0') {
-        std::cout << *p << '\n';
-        p++;
-    }
-}
-
-void func3(int* a) {
-    std::cout << &a << '\n';
-}
-
 int main() {
-    std::string text = R"({"name": "Tom", "age": 12.2, "product": [""]})";
-    auto json_obj = json::parse(text);
-    std::cout << json_obj->dump() << '\n';
+    std::fstream f;
+    f.open(R"(C:\code\cppCode\firstProject\test\data.json)", std::ios::in);
+    std::string res;
+    if (f.is_open()) {
+        std::string line;
+        while (std::getline(f, line)) {
+            res += line;
+        }
+    }
+
+    auto j = json::parse(res);
+
+    std::cout << j->dump() << '\n';
 }

@@ -38,35 +38,36 @@ JsonElement *Parser::parse() {
         throw JsonException("json: mismatched close char");
     }
 
-    if(result == nullptr){
-        return new JsonElementString("");
+    if (result == nullptr) {
+        throw JsonException("json: cant parse anything");
     }
     return result;
 }
 
-std::string Parser::innerQuote(char *&pCurrentChar) {
-    std::string result;
+std::string Parser::innerQuote() {
+    std::string innerString;
     bool escape = false;
     // 字符指针留在结束引号后一位
-    while (*pCurrentChar != '\0') {
-        pCurrentChar++;
+    while (*currentPtr != '\0') {
+        currentPtr++;
+        location++;
 
-        if (*pCurrentChar == '\\') {
+        if (*currentPtr == '\\') {
             escape = !escape;
-            if (escape) { result += *pCurrentChar; }
+            if (escape) { innerString += *currentPtr; }
             continue;
         }
-        if (!escape && *pCurrentChar == '"') {
-            pCurrentChar++;
-            return result;
+        if (!escape && *currentPtr == '"') {
+            currentPtr++;
+            return innerString;
         }
-        result += *pCurrentChar;
+        innerString += *currentPtr;
     }
     throw JsonException("json: no close quote.");
 }
 
 char Parser::checkNextChar() const {
-    char *_temp = this->currentPtr;
+    const char *_temp = this->currentPtr;
     _temp++;
     while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()) {
         if (*_temp == '\0') {
@@ -82,9 +83,9 @@ void Parser::charSwitch() {
      *
      */
     memoryString.clear();
+    location++;
     switch (*currentPtr) {
-
-            // 进入子map元素
+        // 进入子map元素
         case '{':
             temp = new JsonElementMap();
             box.value = temp;
@@ -118,21 +119,24 @@ void Parser::charSwitch() {
             if (!memoryString.empty()) {
                 throw JsonException("json: unexpect \" at " + std::to_string(location));
             }
-            memoryString = innerQuote(currentPtr);
-            if (typeid(currentElement) == typeid(JsonElementMap) && checkNextChar() == ':'){
+            memoryString = innerQuote();
+            if (typeid(currentElement) == typeid(JsonElementMap) && checkNextChar() == ':') {
                 box.key = memoryString;
-            } else{
-                throw JsonException("except ':' after a key");
+            } else {
+                throw JsonException("json: except ':' after a key");
             }
             break;
         default:
-            throw JsonException("not excepted char at " + std::to_string(location));
+            normalParse();
     }
 }
 
 void Parser::normalParse() {
     memoryString.clear();
-    while (memoryString.length() < 50 && *currentPtr != '\0'){
+    while (memoryString.length() < 50 && *currentPtr != '\0') {
+        memoryString += *currentPtr;
 
+        currentPtr++;
+        location++;
     }
 }

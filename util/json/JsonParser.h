@@ -4,9 +4,26 @@
 #include "JsonElement.h"
 #include "map"
 
+// 外部访问空间
 namespace json {
 
     element::JsonElement *parse(std::string &text);
+
+    // cpp对象转json对象
+    template<class T_con, class T_ele>
+    class JsonObject {
+        element::JsonElement *value = nullptr;
+
+        T_ele operator[](std::string &&key) {
+            if (value == nullptr){
+                value = new element::JsonElementMap();
+            }
+        }
+
+        T_ele operator[](size_t &&key) {
+
+        }
+    };
 
     class JsonException : public std::exception {
     public:
@@ -28,7 +45,7 @@ namespace json::parser {
         static std::regex numberReg;
         static std::vector<char> endPiece;
 
-        explicit Parser(std::string &text) : _text(text) {currentPtr = text.c_str();};
+        explicit Parser(std::string &text) : _text(text) { currentPtr = text.c_str(); };
 
         json::element::JsonElement *parse();
 
@@ -43,7 +60,7 @@ namespace json::parser {
         json::element::JsonElement *currentElement = nullptr;
 
         // 临时切换对象
-        json::element::JsonElement* temp = nullptr;
+        json::element::JsonElement *temp = nullptr;
 
         // 当前字符
         const char *currentPtr = nullptr;
@@ -62,7 +79,7 @@ namespace json::parser {
         std::stack<json::element::JsonElement *> container;
 
         // 解析双引号内容
-        static std::string innerQuote(char *&pCurrentChar);
+        std::string innerQuote();
 
         // 读取非引号内字符
         void normalParse();
