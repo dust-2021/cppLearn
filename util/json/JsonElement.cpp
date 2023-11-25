@@ -37,12 +37,18 @@ void JsonElementMap::parseAdd(json::element::JsonPiece &other) {
         throw ElementException("json: key lost");
     }
     this->childrenNode[other.key] = other.value;
+    other.clear();
 }
 
 JsonElementSequence::JsonElementSequence(JsonElementSequence &other) {
     for (const auto &item: other.childrenNode) {
         this->childrenNode.push_back(item->getCopy());
     }
+}
+
+void JsonElementSequence::parseAdd(json::element::JsonPiece &other) {
+    this->childrenNode.push_back(other.value);
+    other.clear();
 }
 
 JsonElementSequence::~JsonElementSequence() {

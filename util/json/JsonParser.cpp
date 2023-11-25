@@ -66,10 +66,10 @@ std::string Parser::innerQuote() {
     throw JsonException("json: no close quote.");
 }
 
-char Parser::checkNextChar() const {
+char Parser::checkNextChar(size_t &&offset) const {
     const char *_temp = this->currentPtr;
-    _temp++;
-    while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) == ignoreChar.end()) {
+    _temp += offset;
+    while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) != ignoreChar.end()) {
         if (*_temp == '\0') {
             return '\0';
         }
@@ -88,16 +88,26 @@ void Parser::charSwitch() {
         // 进入子map元素
         case '{':
             temp = new JsonElementMap();
-            box.value = temp;
-            currentElement->parseAdd(box);
+            if (currentElement == nullptr) {
+                currentElement = temp;
+            } else {
+                box.value = temp;
+                currentElement->parseAdd(box);
+            }
             currentElement = temp;
+            container.push(temp);
             break;
             // 进入子list元素
         case '[':
             temp = new JsonElementSequence();
-            box.value = temp;
-            currentElement->parseAdd(box);
+            if (currentElement == nullptr) {
+                currentElement = temp;
+            } else {
+                box.value = temp;
+                currentElement->parseAdd(box);
+            }
             currentElement = temp;
+            container.push(temp);
             break;
             // 退出map元素
         case '}':
@@ -120,10 +130,13 @@ void Parser::charSwitch() {
                 throw JsonException("json: unexpect \" at " + std::to_string(location));
             }
             memoryString = innerQuote();
-            if (typeid(currentElement) == typeid(JsonElementMap) && checkNextChar() == ':') {
+            if (currentElement->typeCode() == 5 && checkNextChar() == ':') {
                 box.key = memoryString;
-            } else {
+            } else if (currentElement->typeCode() == 5) {
                 throw JsonException("json: except ':' after a key");
+            } else {
+                box.value = new JsonElementString(memoryString);
+                currentElement->parseAdd(box);
             }
             break;
         default:
@@ -133,10 +146,26 @@ void Parser::charSwitch() {
 
 void Parser::normalParse() {
     memoryString.clear();
-    while (memoryString.length() < 50 && *currentPtr != '\0') {
+    while (std::find(endPiece.begin(), endPiece.end(), *currentPtr) != endPiece.end()) {
+        if (*currentPtr == '\0') {
+            break;
+        }
+        if (memoryString.length() >= 50) {
+            throw JsonException("json: too long for a value type");
+        }
         memoryString += *currentPtr;
-
         currentPtr++;
         location++;
     }
+
+    if (memoryString == "true" || memoryString == "false") {
+        box.value = new JsonElementBool(memoryString == "true");
+    } else if (memoryString == "null") {
+        box.value = new JsonElementNull();
+    } else if (std::regex_match(memoryString, numberReg)) {
+        box.value = new JsonElementNumber(memoryString);
+    } else {
+        throw JsonException("json: cant parse '" + memoryString + "'");
+    }
+    currentElement->parseAdd(box);
 }

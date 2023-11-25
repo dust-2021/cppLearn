@@ -15,7 +15,7 @@ namespace json {
         element::JsonElement *value = nullptr;
 
         T_ele operator[](std::string &&key) {
-            if (value == nullptr){
+            if (value == nullptr) {
                 value = new element::JsonElementMap();
             }
         }
@@ -24,6 +24,8 @@ namespace json {
 
         }
     };
+}
+namespace json::parser {
 
     class JsonException : public std::exception {
     public:
@@ -37,8 +39,7 @@ namespace json {
 
         [[nodiscard]] const char *what() const noexcept override { return this->info.c_str(); };
     };
-}
-namespace json::parser {
+
     class Parser {
     public:
         static std::vector<char> ignoreChar;
@@ -87,7 +88,7 @@ namespace json::parser {
         void charSwitch();
 
         // 检查下一个有效字符
-        [[nodiscard]] char checkNextChar() const;
+        [[nodiscard]] char checkNextChar(size_t &&offset=0) const;
     };
 }
 #endif //FIRSTPROJECT_JSONPARSER_H

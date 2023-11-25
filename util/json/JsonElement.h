@@ -31,13 +31,13 @@ namespace json::element {
 
     // 解析json时的通用生成json对象的数据类型 被parseAdd函数解析
     struct JsonPiece {
-        bool read = false;
+        bool ready = false;
         std::string key;
         JsonElement *value;
 
         // 重置结构体
         void clear() {
-            read = false;
+            ready = false;
             key.clear();
             value = nullptr;
         }
@@ -198,7 +198,7 @@ namespace json::element {
 
         JsonElementSequence *getCopy() override { return new JsonElementSequence(*this); };
 
-        void parseAdd(JsonPiece &other) override { this->childrenNode.push_back(other.value); };
+        void parseAdd(JsonPiece &other) override;
 
         void push_back(JsonElement *other) { this->childrenNode.push_back(other->getCopy()); };
 

@@ -18,8 +18,11 @@ int main() {
             res += line;
         }
     }
+    f.close();
+    
+    std::cout << res << '\n';
 
-    auto j = json::parse(res);
+//    auto j = json::parse(res);
 
-    std::cout << j->dump() << '\n';
+//    std::cout << j->dump() << '\n';
 }
