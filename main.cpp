@@ -3,24 +3,19 @@
 #include "fstream"
 #include "util/json/JsonElement.h"
 #include "util/json/JsonParser.h"
-#include "filesystem"
+
 
 int main() {
     std::fstream f;
-    f.open(R"(C:\code\cppCode\firstProject\test\data.json)", std::ios::in);
-    std:: cout<< std::filesystem::current_path() << '\n';
+    f.open(R"(/code/cppCode/firstProject/test/data.json)", std::ios::in);
     std::string res;
     if (f.is_open()) {
         std::string line;
         while (std::getline(f, line)) {
-            for (char p: line) {
-                if (p == '\\' || p == '"'){
-                    res += '\\';
-                }
-                res +=p;
+            res += line;
             }
         }
-    }
+
     f.close();
     
     std::cout << res << '\n';

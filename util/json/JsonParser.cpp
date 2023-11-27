@@ -7,7 +7,13 @@ using namespace json::element;
 using namespace json::parser;
 std::regex Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
 std::vector<char> Parser::ignoreChar = {' ', '\n', '\r', '\t'};
-std::vector<char> Parser::endPiece = {'\n', '}', ']', ',', ':'};
+std::vector<char> Parser::endPiece = {'\n', ' ', '\t', '\r', '}', ']', ',', ':'};
+std::unordered_map<int, std::vector<char>> Parser::endContainer = {{1, {}},
+                                                                   {2, {}},
+                                                                   {3, {}},
+                                                                   {4, {}},
+                                                                   {5, {',', '}'}},
+                                                                   {6, {',', ']'}}};
 
 JsonElement *json::parse(std::string &text) {
     auto parser = Parser(text);
@@ -19,6 +25,7 @@ JsonElement *Parser::parse() {
     // main loop
     while (*currentPtr != '\0') {
         location++;
+
 
         // 跳过空字符
         if (std::find(ignoreChar.begin(), ignoreChar.end(), *currentPtr) != ignoreChar.end()) {
@@ -46,22 +53,24 @@ JsonElement *Parser::parse() {
 
 std::string Parser::innerQuote() {
     std::string innerString;
-    bool escape = false;
+    escape = false;
     // 字符指针留在结束引号后一位
     while (*currentPtr != '\0') {
         currentPtr++;
         location++;
-
-        if (*currentPtr == '\\') {
-            escape = !escape;
-            if (escape) { innerString += *currentPtr; }
+        std::cout << checkNextChar() << '\n';
+        if (*currentPtr == '\\' && checkNextChar(1) == '"') {
+            innerString += '"';
+            currentPtr++;
+            location++;
             continue;
         }
-        if (!escape && *currentPtr == '"') {
+        if (*currentPtr == '"') {
             currentPtr++;
             return innerString;
         }
         innerString += *currentPtr;
+        std:: cout <<currentPtr << '\n';
     }
     throw JsonException("json: no close quote.");
 }
@@ -130,13 +139,28 @@ void Parser::charSwitch() {
                 throw JsonException("json: unexpect \" at " + std::to_string(location));
             }
             memoryString = innerQuote();
-            if (currentElement->typeCode() == 5 && checkNextChar() == ':') {
-                box.key = memoryString;
-            } else if (currentElement->typeCode() == 5) {
-                throw JsonException("json: except ':' after a key");
-            } else {
-                box.value = new JsonElementString(memoryString);
-                currentElement->parseAdd(box);
+
+            // 判断字符出现环境
+            switch (currentElement->typeCode()) {
+                case 5:
+                    // key 为空且后置为:
+                    if (checkNextChar() == ':' && box.key.empty()) {
+                        box.key = memoryString;
+                        break;
+                    }
+                case 6:
+                    if (!box.key.empty() && std::find(endContainer[currentElement->typeCode()].begin(),
+                                                      endContainer[currentElement->typeCode()].end(),
+                                                      *currentPtr) !=
+                                            endContainer[currentElement->typeCode()].end()) {
+                        box.value = new JsonElementString(memoryString);
+                        currentElement->parseAdd(box);
+                    } else {
+                        throw JsonException("json: unambiguous");
+                    }
+                    break;
+                default:
+                    throw JsonException("json: not excepted \" at " + std::to_string(location));
             }
             break;
         default:

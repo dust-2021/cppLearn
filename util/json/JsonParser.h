@@ -42,9 +42,14 @@ namespace json::parser {
 
     class Parser {
     public:
+        // 无视字符
         static std::vector<char> ignoreChar;
+        // 数字正则规则
         static std::regex numberReg;
+        // 单元结束符
         static std::vector<char> endPiece;
+        // 容器结束单元
+        static std:: unordered_map<int, std::vector<char>> endContainer;
 
         explicit Parser(std::string &text) : _text(text) { currentPtr = text.c_str(); };
 
@@ -71,6 +76,8 @@ namespace json::parser {
         std::string memoryString;
         // 跳过字符标识
         bool afterIgnore = false;
+        // 是否转义
+        bool escape = false;
         // 指定字符
         std::vector<char> designChar;
         // 初始化json元素的
