@@ -61,6 +61,8 @@ namespace json::element {
 
         [[nodiscard]] virtual int8_t typeCode() const = 0;
 
+        // TODO: 重载[] = 用于初始化对象
+
     private:
     };
 

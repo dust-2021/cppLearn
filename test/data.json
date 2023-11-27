@@ -3,7 +3,7 @@
   "age": 10.2,
   "products": [
     {
-      "type": "car",
+      "type": "car\u4e9f",
       "price": 100000000,
       "name": null
     },

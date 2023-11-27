@@ -146,7 +146,7 @@ void Parser::charSwitch() {
 
 void Parser::normalParse() {
     memoryString.clear();
-    while (std::find(endPiece.begin(), endPiece.end(), *currentPtr) != endPiece.end()) {
+    while (std::find(endPiece.begin(), endPiece.end(), *currentPtr) == endPiece.end()) {
         if (*currentPtr == '\0') {
             break;
         }
