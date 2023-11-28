@@ -5,7 +5,7 @@
 
 using namespace json::element;
 using namespace json::parser;
-std::regex Parser::numberReg = std::regex(R"(^(\d+)(\.\d+)?)");
+std::regex Parser::numberReg = std::regex(R"(^-?(\d+)(\.\d+)?$)");
 std::vector<char> Parser::ignoreChar = {' ', '\n', '\r', '\t'};
 std::vector<char> Parser::endPiece = {'\n', ' ', '\t', '\r', '}', ']', ',', ':'};
 std::unordered_map<int, std::vector<char>> Parser::endContainer = {{1, {}},
@@ -20,16 +20,20 @@ JsonElement *json::parse(std::string &text) {
     return parser.parse();
 };
 
+void Parser::advance(int num) {
+    location += num;
+    currentPtr += num;
+}
+
 JsonElement *Parser::parse() {
 
     // main loop
     while (*currentPtr != '\0') {
-        location++;
 
 
         // 跳过空字符
         if (std::find(ignoreChar.begin(), ignoreChar.end(), *currentPtr) != ignoreChar.end()) {
-            this->currentPtr++;
+            advance();
             continue;
         }
 
@@ -39,7 +43,6 @@ JsonElement *Parser::parse() {
         if (result == nullptr) {
             result = currentElement;
         }
-        currentPtr++;
     }
     if (!container.empty()) {
         throw JsonException("json: mismatched close char");
@@ -53,36 +56,31 @@ JsonElement *Parser::parse() {
 
 std::string Parser::innerQuote() {
     std::string innerString;
-    escape = false;
     // 字符指针留在结束引号后一位
     while (*currentPtr != '\0') {
-        currentPtr++;
-        location++;
-        std::cout << checkNextChar() << '\n';
         if (*currentPtr == '\\' && checkNextChar(1) == '"') {
             innerString += '"';
-            currentPtr++;
-            location++;
+            advance(2);
             continue;
         }
         if (*currentPtr == '"') {
-            currentPtr++;
+            advance();
             return innerString;
         }
         innerString += *currentPtr;
-        std:: cout <<currentPtr << '\n';
+        advance();
     }
     throw JsonException("json: no close quote.");
 }
 
-char Parser::checkNextChar(size_t &&offset) const {
+char Parser::checkNextChar(size_t &&offset, bool backStep) const {
     const char *_temp = this->currentPtr;
-    _temp += offset;
+    _temp += backStep ? -offset : offset;
     while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) != ignoreChar.end()) {
         if (*_temp == '\0') {
             return '\0';
         }
-        _temp++;
+        _temp += backStep ? -1 : 1;
     }
     return *_temp;
 }
@@ -92,52 +90,52 @@ void Parser::charSwitch() {
      *
      */
     memoryString.clear();
-    location++;
     switch (*currentPtr) {
-        // 进入子map元素
         case '{':
+            // 进入子map元素
             temp = new JsonElementMap();
-            if (currentElement == nullptr) {
-                currentElement = temp;
-            } else {
+            if (currentElement != nullptr) {
                 box.value = temp;
                 currentElement->parseAdd(box);
             }
             currentElement = temp;
             container.push(temp);
+            advance();
             break;
-            // 进入子list元素
         case '[':
+            // 进入子list元素
             temp = new JsonElementSequence();
-            if (currentElement == nullptr) {
-                currentElement = temp;
-            } else {
+            if (currentElement != nullptr) {
                 box.value = temp;
                 currentElement->parseAdd(box);
             }
             currentElement = temp;
             container.push(temp);
+            advance();
             break;
-            // 退出map元素
         case '}':
+            // 退出map元素
             if (currentElement->typeCode() != 5) {
                 throw JsonException("json: mismatched close char at " + std::to_string(location));
             }
-            currentElement = container.empty() ? container.top() : nullptr;
             container.pop();
+            currentElement = container.empty() ? nullptr : container.top();
+            advance();
             break;
-            // 退出list元素
         case ']':
+            // 退出list元素
             if (currentElement->typeCode() != 6) {
                 throw JsonException("json: mismatched close char at " + std::to_string(location));
             }
-            currentElement = container.empty() ? container.top() : nullptr;
             container.pop();
+            currentElement = container.empty() ? nullptr : container.top();
+            advance();
             break;
         case '"':
             if (!memoryString.empty()) {
                 throw JsonException("json: unexpect \" at " + std::to_string(location));
             }
+            advance();
             memoryString = innerQuote();
 
             // 判断字符出现环境
@@ -145,6 +143,7 @@ void Parser::charSwitch() {
                 case 5:
                     // key 为空且后置为:
                     if (checkNextChar() == ':' && box.key.empty()) {
+                        advance();
                         box.key = memoryString;
                         break;
                     }
@@ -153,6 +152,7 @@ void Parser::charSwitch() {
                                                       endContainer[currentElement->typeCode()].end(),
                                                       *currentPtr) !=
                                             endContainer[currentElement->typeCode()].end()) {
+                        advance();
                         box.value = new JsonElementString(memoryString);
                         currentElement->parseAdd(box);
                     } else {
@@ -165,6 +165,7 @@ void Parser::charSwitch() {
             break;
         default:
             normalParse();
+            advance();
     }
 }
 
@@ -178,8 +179,11 @@ void Parser::normalParse() {
             throw JsonException("json: too long for a value type");
         }
         memoryString += *currentPtr;
-        currentPtr++;
-        location++;
+        advance();
+    }
+    // 容器内连续结束符
+    if (memoryString.empty() && (checkNextChar(1, true) == '}' || checkNextChar(1, true) == ']')) {
+        return;
     }
 
     if (memoryString == "true" || memoryString == "false") {

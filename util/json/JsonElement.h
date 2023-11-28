@@ -31,13 +31,11 @@ namespace json::element {
 
     // 解析json时的通用生成json对象的数据类型 被parseAdd函数解析
     struct JsonPiece {
-        bool ready = false;
         std::string key;
         JsonElement *value;
 
         // 重置结构体
         void clear() {
-            ready = false;
             key.clear();
             value = nullptr;
         }

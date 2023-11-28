@@ -49,7 +49,7 @@ namespace json::parser {
         // 单元结束符
         static std::vector<char> endPiece;
         // 容器结束单元
-        static std:: unordered_map<int, std::vector<char>> endContainer;
+        static std::unordered_map<int, std::vector<char>> endContainer;
 
         explicit Parser(std::string &text) : _text(text) { currentPtr = text.c_str(); };
 
@@ -57,7 +57,7 @@ namespace json::parser {
 
 
     private:
-        // 待解析字符串   `
+        // 待解析字符串
         std::string _text;
 
         // 解析结果
@@ -74,13 +74,9 @@ namespace json::parser {
         size_t location = 0;
         // 缓存字符串
         std::string memoryString;
-        // 跳过字符标识
-        bool afterIgnore = false;
-        // 是否转义
-        bool escape = false;
         // 指定字符
         std::vector<char> designChar;
-        // 初始化json元素的
+        // 初始化json元素的结构体
         json::element::JsonPiece box;
 
         // 嵌套容器存储
@@ -92,10 +88,14 @@ namespace json::parser {
         // 读取非引号内字符
         void normalParse();
 
+        // 逐字符解析
         void charSwitch();
 
+        // 每当一个字符被解析 字符指针和位置记录加一
+        void advance(int num = 1);
+
         // 检查下一个有效字符
-        [[nodiscard]] char checkNextChar(size_t &&offset=0) const;
+        [[nodiscard]] char checkNextChar(size_t &&offset = 0, bool backStep = false) const;
     };
 }
 #endif //FIRSTPROJECT_JSONPARSER_H

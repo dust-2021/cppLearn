@@ -7,7 +7,7 @@
 
 int main() {
     std::fstream f;
-    f.open(R"(/code/cppCode/firstProject/test/data.json)", std::ios::in);
+    f.open(R"(../test/data.json)", std::ios::in);
     std::string res;
     if (f.is_open()) {
         std::string line;
@@ -23,4 +23,6 @@ int main() {
     auto j = json::parse(res);
 
     std::cout << j->dump() << '\n';
+
+    delete j;
 }
