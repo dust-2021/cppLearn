@@ -46,20 +46,29 @@ namespace json::element {
 
     public:
         // must be implemented for inherit
-        virtual ~JsonElement() = 0;
+        virtual ~JsonElement();
 
         // dump json object to string
-        [[nodiscard]] virtual std::string dump() const = 0;
+        [[nodiscard]] virtual std::string dump() const {
+            throw ElementException("json: base element used.");
+        };
 
         // return a new json object ptr
-        virtual JsonElement *getCopy() = 0;
+        virtual JsonElement *getCopy() {
+            throw ElementException("json: base element used.");
+        };
 
         // initial object value
-        virtual void parseAdd(JsonPiece &other) = 0;
+        virtual void parseAdd(JsonPiece &other) {
+            throw ElementException("json: base element used.");
+        };
 
-        [[nodiscard]] virtual int8_t typeCode() const = 0;
+        [[nodiscard]] virtual int8_t typeCode() const {
+            throw ElementException("json: base element used.");
+        };
 
         // TODO: 重载[] = 用于初始化对象
+//        JsonElement & operator=(int other);
 
     private:
     };

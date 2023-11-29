@@ -165,7 +165,6 @@ void Parser::charSwitch() {
             break;
         default:
             normalParse();
-            advance();
     }
 }
 
