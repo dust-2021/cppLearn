@@ -10,4 +10,6 @@ add_executable(firstProject main.cpp
         py/PythonExecutor.h
         util/json/JsonElement.cpp
         util/json/JsonElement.h
+        util/http/request.cpp
+        util/http/request.h
 )

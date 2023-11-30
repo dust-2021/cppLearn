@@ -20,6 +20,7 @@ JsonElement *json::parse(std::string &text) {
     return parser.parse();
 };
 
+// 指针前进
 void Parser::advance(int num) {
     location += num;
     currentPtr += num;
@@ -74,15 +75,24 @@ std::string Parser::innerQuote() {
 }
 
 char Parser::checkNextChar(size_t &&offset, bool backStep) const {
+    int effectCharNum = 1;
     const char *_temp = this->currentPtr;
     _temp += backStep ? -offset : offset;
+    int num = 0;
+
+    nextEffectChar:
     while (std::find(ignoreChar.begin(), ignoreChar.end(), *_temp) != ignoreChar.end()) {
         if (*_temp == '\0') {
             return '\0';
         }
         _temp += backStep ? -1 : 1;
     }
-    return *_temp;
+    num += 1;
+    if (num == effectCharNum){
+        return *_temp;
+    } else {
+        goto nextEffectChar;
+    }
 }
 
 void Parser::charSwitch() {
@@ -163,6 +173,12 @@ void Parser::charSwitch() {
                     throw JsonException("json: not excepted \" at " + std::to_string(location));
             }
             break;
+        case ',':
+            if (checkNextChar(1) == '}' || checkNextChar(1) == ']'){
+                throw JsonException("json: cant finish container after a ',' at location " + std::to_string(location));
+            }
+            advance();
+            break;
         default:
             normalParse();
     }
@@ -175,7 +191,7 @@ void Parser::normalParse() {
             break;
         }
         if (memoryString.length() >= 50) {
-            throw JsonException("json: too long for a value type");
+            throw JsonException("json: too long for a value type at location" + std::to_string(location));
         }
         memoryString += *currentPtr;
         advance();
@@ -192,7 +208,7 @@ void Parser::normalParse() {
     } else if (std::regex_match(memoryString, numberReg)) {
         box.value = new JsonElementNumber(memoryString);
     } else {
-        throw JsonException("json: cant parse '" + memoryString + "'");
+        throw JsonException("json: cant parse '" + memoryString + "' at location" + std::to_string(location));
     }
     currentElement->parseAdd(box);
 }

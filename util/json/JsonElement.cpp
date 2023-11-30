@@ -33,9 +33,6 @@ std::string JsonElementMap::dump() const {
 }
 
 void JsonElementMap::parseAdd(json::element::JsonPiece &other) {
-    if (other.key.empty()) {
-        throw ElementException("json: key lost");
-    }
     this->childrenNode[other.key] = other.value;
     other.clear();
 }

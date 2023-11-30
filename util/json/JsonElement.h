@@ -7,6 +7,7 @@
 #include "unordered_map"
 #include "iostream"
 #include "cstdint"
+#include "initializer_list"
 
 namespace json::element {
 
@@ -67,8 +68,26 @@ namespace json::element {
             throw ElementException("json: base element used.");
         };
 
-        // TODO: 重载[] = 用于初始化对象
-//        JsonElement & operator=(int other);
+        virtual JsonElement *operator[](int &&index) {
+            throw ElementException("json: this type cant be indexed by int");
+        };
+
+        virtual JsonElement *operator[](int &index) {
+            throw ElementException("json: this type cant be indexed by int");
+        };
+
+        virtual JsonElement *operator[](std::string &&key) {
+            throw ElementException("json: this type cant be indexed by string");
+        };
+
+        virtual JsonElement *operator[](std::string &key) {
+            throw ElementException("json: this type cant be indexed by string");
+        };
+
+        virtual JsonElement &operator=(std::string &key) {
+            throw ElementException("json: this type cant be indexed by string");
+        };
+
 
     private:
     };
@@ -153,6 +172,8 @@ namespace json::element {
 
         explicit JsonElementNumber(std::string &text) { this->value = text; };
 
+        explicit JsonElementNumber(std::string &&text) { this->value = text; };
+
         JsonElementNumber(JsonElementNumber &other) = default;
 
         ~JsonElementNumber() override = default;
@@ -185,9 +206,11 @@ namespace json::element {
 
         void parseAdd(JsonPiece &other) override;
 
-        JsonElement *operator[](std::string &key) { return this->childrenNode[key]; }
-
         [[nodiscard]] int8_t typeCode() const override { return 5; };
+
+        JsonElement *operator[](std::string &&key) override { return this->childrenNode[key]; };
+
+        JsonElement *operator[](std::string &key) override { return this->childrenNode[key]; };
 
     private:
         std::unordered_map<std::string, JsonElement *> childrenNode;
@@ -212,6 +235,10 @@ namespace json::element {
         void push_back(JsonElement *other) { this->childrenNode.push_back(other->getCopy()); };
 
         [[nodiscard]] int8_t typeCode() const override { return 6; };
+
+        JsonElement *operator[](int &&index) override { return this->childrenNode[index]; };
+
+        JsonElement *operator[](int &index) override { return this->childrenNode[index]; };
     private:
         std::vector<JsonElement *> childrenNode;
     };

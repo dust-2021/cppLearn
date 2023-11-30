@@ -3,6 +3,7 @@
 
 #include "JsonElement.h"
 #include "map"
+#include "initializer_list"
 
 // 外部访问空间
 namespace json {
@@ -10,23 +11,12 @@ namespace json {
     element::JsonElement *parse(std::string &text);
 
     // cpp对象转json对象
-    template<class T_con, class T_ele>
-    class JsonObject {
-        element::JsonElement *value = nullptr;
+    template<typename _type_in>
+    json::element::JsonElement *load(_type_in obj);
 
-        T_ele operator[](std::string &&key) {
-            if (value == nullptr) {
-                value = new element::JsonElementMap();
-            }
-        }
-
-        T_ele operator[](size_t &&key) {
-
-        }
-    };
 }
 namespace json::parser {
-
+    // 解析异常对象
     class JsonException : public std::exception {
     public:
         std::string info;
@@ -40,6 +30,7 @@ namespace json::parser {
         [[nodiscard]] const char *what() const noexcept override { return this->info.c_str(); };
     };
 
+    // 解析对象
     class Parser {
     public:
         // 无视字符
@@ -53,6 +44,8 @@ namespace json::parser {
 
         explicit Parser(std::string &text) : _text(text) { currentPtr = text.c_str(); };
 
+        explicit Parser(std::string &&text) : _text(text) { currentPtr = text.c_str(); };
+
         json::element::JsonElement *parse();
 
 
@@ -62,6 +55,7 @@ namespace json::parser {
 
         // 解析结果
         json::element::JsonElement *result = nullptr;
+
         // 当前json元素
         json::element::JsonElement *currentElement = nullptr;
 
@@ -70,12 +64,13 @@ namespace json::parser {
 
         // 当前字符
         const char *currentPtr = nullptr;
+
         // 当前字符位置
         size_t location = 0;
+
         // 缓存字符串
         std::string memoryString;
-        // 指定字符
-        std::vector<char> designChar;
+
         // 初始化json元素的结构体
         json::element::JsonPiece box;
 
@@ -94,7 +89,7 @@ namespace json::parser {
         // 每当一个字符被解析 字符指针和位置记录加一
         void advance(int num = 1);
 
-        // 检查下一个有效字符
+        // 从当前字符开始 检查下一个有效字符
         [[nodiscard]] char checkNextChar(size_t &&offset = 0, bool backStep = false) const;
     };
 }
