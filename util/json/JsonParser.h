@@ -10,10 +10,6 @@ namespace json {
 
     element::JsonElement *parse(std::string &text);
 
-    // cpp对象转json对象
-    template<typename _type_in>
-    json::element::JsonElement *load(_type_in obj);
-
 }
 namespace json::parser {
     // 解析异常对象

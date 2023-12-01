@@ -20,16 +20,25 @@ JsonElementMap::~JsonElementMap() {
     }
 }
 
-std::string JsonElementMap::dump() const {
+std::string JsonElementMap::_dump() const {
     std::string result = "{";
     for (auto &iter: this->childrenNode) {
         if (result != "{") {
             result += ',';
         }
-        result += '"' + iter.first + '"' + ':' + iter.second->dump();
+        result += '"' + iter.first + '"' + ':' + iter.second->_dump();
     }
     result += "}";
     return result;
+}
+
+JsonElement* JsonElementMap::operator[](std::string &&key) {
+    auto target = this->childrenNode.find(key);
+    if (target != this->childrenNode.end()){
+        return target->second;
+    } else {
+        throw ElementException("json: doesnt exist key '" + key + '\'');
+    }
 }
 
 void JsonElementMap::parseAdd(json::element::JsonPiece &other) {
@@ -55,13 +64,13 @@ JsonElementSequence::~JsonElementSequence() {
     }
 }
 
-std::string JsonElementSequence::dump() const {
+std::string JsonElementSequence::_dump() const {
     std::string result = "[";
     for (auto &iter: this->childrenNode) {
         if (result != "[") {
             result += ',';
         }
-        result += iter->dump();
+        result += iter->_dump();
     }
     result += ']';
     return result;

@@ -26,17 +26,12 @@ void func() {
     std::chrono::duration<double> elapsed_seconds = after - now;
     std::cout << elapsed_seconds.count() << '\n';
 
-    std::cout << j->dump() << '\n';
-
+    std::cout << (*j)["products"]->dump() << '\n';
     delete j;
 }
 
 int main() {
-    std::unordered_map<std::string, json::element::JsonElement> _map;
-    _map["age"];
-    for (const auto &pair: _map) {
-        std::cout << pair.first << ':' << pair.second.dump() << '\n';
-    }
+    func();
 }
 
 

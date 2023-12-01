@@ -49,8 +49,12 @@ namespace json::element {
         // must be implemented for inherit
         virtual ~JsonElement();
 
-        // dump json object to string
         [[nodiscard]] virtual std::string dump() const {
+            return '"' + this->_dump() + '"';
+        }
+
+        // _dump json object to string
+        [[nodiscard]] virtual std::string _dump() const {
             throw ElementException("json: base element used.");
         };
 
@@ -84,9 +88,17 @@ namespace json::element {
             throw ElementException("json: this type cant be indexed by string");
         };
 
-        virtual JsonElement &operator=(std::string &key) {
-            throw ElementException("json: this type cant be indexed by string");
-        };
+        virtual int asInt() {
+            throw ElementException("json: this type cant convert to int");
+        }
+
+        virtual long asLong() {
+            throw ElementException("json: this type cant convert to long");
+        }
+
+        virtual double asDouble() {
+            throw ElementException("json: this type cant convert to double");
+        }
 
 
     private:
@@ -103,7 +115,7 @@ namespace json::element {
 
         ~JsonElementNull() override = default;
 
-        [[nodiscard]] std::string dump() const override { return "null"; };
+        [[nodiscard]] std::string _dump() const override { return "null"; };
 
         JsonElementNull *getCopy() override { return new JsonElementNull(*this); }
 
@@ -127,7 +139,7 @@ namespace json::element {
 
         ~JsonElementBool() override = default;
 
-        [[nodiscard]] std::string dump() const override { return value ? "true" : "false"; }
+        [[nodiscard]] std::string _dump() const override { return value ? "true" : "false"; }
 
         JsonElementBool *getCopy() override { return new JsonElementBool(*this); }
 
@@ -152,7 +164,7 @@ namespace json::element {
 
         explicit JsonElementString(std::string &&text) { this->value = text; };
 
-        [[nodiscard]] std::string dump() const override { return '"' + this->value + '"'; };
+        [[nodiscard]] std::string _dump() const override { return '"' + this->value + '"'; };
 
         JsonElementString *getCopy() override { return new JsonElementString(*this); }
 
@@ -178,13 +190,19 @@ namespace json::element {
 
         ~JsonElementNumber() override = default;
 
-        [[nodiscard]] std::string dump() const override { return this->value; };
+        [[nodiscard]] std::string _dump() const override { return this->value; };
 
         JsonElementNumber *getCopy() override { return new JsonElementNumber(*this); }
 
         void parseAdd(JsonPiece &other) override { throw ElementException("json: not container"); };
 
         [[nodiscard]] int8_t typeCode() const override { return 4; };
+
+        int asInt() override { return std::stoi(value); };
+
+        long asLong() override { return std::stol(value); };
+
+        double asDouble() override { return std::stod(value); };
 
     private:
         std::string value;
@@ -200,7 +218,7 @@ namespace json::element {
 
         ~JsonElementMap() override;
 
-        [[nodiscard]] std::string dump() const override;
+        [[nodiscard]] std::string _dump() const override;
 
         JsonElementMap *getCopy() override { return new JsonElementMap(*this); };
 
@@ -208,7 +226,7 @@ namespace json::element {
 
         [[nodiscard]] int8_t typeCode() const override { return 5; };
 
-        JsonElement *operator[](std::string &&key) override { return this->childrenNode[key]; };
+        JsonElement *operator[](std::string &&key) override;
 
         JsonElement *operator[](std::string &key) override { return this->childrenNode[key]; };
 
@@ -226,7 +244,7 @@ namespace json::element {
 
         ~JsonElementSequence() override;
 
-        [[nodiscard]] std::string dump() const override;
+        [[nodiscard]] std::string _dump() const override;
 
         JsonElementSequence *getCopy() override { return new JsonElementSequence(*this); };
 
@@ -243,6 +261,5 @@ namespace json::element {
         std::vector<JsonElement *> childrenNode;
     };
 }
-
 
 #endif //FIRSTPROJECT_JSONELEMENT_H
