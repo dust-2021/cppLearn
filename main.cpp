@@ -31,7 +31,8 @@ void func() {
 }
 
 int main() {
-    func();
+    std::wstring str;
+    std::string temp = "啊啊啊";
 }
 
 
