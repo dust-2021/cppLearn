@@ -6,6 +6,7 @@
 #include "iostream"
 #include "vector"
 #include "unordered_map"
+#include "type_traits"
 
 namespace json::elements {
     class valueType;
@@ -31,19 +32,27 @@ namespace json::elements {
 
         valueType() = default;
 
-        virtual valueType *copy() { throw jsonError("use base element"); };
+        // 完全复制一个堆区对象
+        virtual valueType *copy_p() { throw jsonError("use base element"); };
 
+        // 复制对象
+        virtual valueType copy() { throw jsonError("use base element"); };
+
+        // 类型代号
         virtual int8_t type() { return 0; };
 
+        // 生成对象的字符串
         virtual std::string dump() { throw jsonError("use base element"); };
 
-        virtual valueType get(size_t index) { throw jsonError("element not support 'get'"); };
+        // 下标获取
+        virtual valueType get(size_t &index) { throw jsonError("element not support 'get'"); };
 
-        virtual valueType get(size_t &&index) { return get(index); };
+        valueType get(size_t &&index) { return get(index); };
 
+        // key获取
         virtual valueType get(std::string &key) { throw jsonError("element not support 'get'"); };
 
-        virtual valueType get(std::string &&key) { return get(key); };
+        valueType get(std::string &&key) { return get(key); };
 
         virtual jsonIter begin();
 
@@ -55,6 +64,9 @@ namespace json::elements {
 
         virtual double asDouble() { throw jsonError("element not support 'asDouble'"); };
 
+        virtual std::string asString() { throw jsonError("element not support 'asString'"); };
+
+        // 是否为空类型
         virtual bool isNull() { return false; };
     private:
     };
@@ -66,7 +78,6 @@ namespace json::elements {
         bool isNull() override { return true; };
 
         std::string dump() override { return "null"; };
-
     private:
     };
 
@@ -92,6 +103,8 @@ namespace json::elements {
 
         int8_t type() override { return 3; };
 
+        std::string asString() override { return _value; };
+
         std::string dump() override { return '"' + _value + '"'; };
 
     private:
@@ -103,6 +116,10 @@ namespace json::elements {
         explicit numberType(std::string &text) : _value(text) {};
 
         explicit numberType(std::string &&text) : _value(text) {};
+
+        explicit numberType(int &value) : _value(std::to_string(value)) {};
+
+        explicit numberType(float &value) : _value(std::to_string(value)) {};
 
         int8_t type() override { return 4; };
 
@@ -116,11 +133,39 @@ namespace json::elements {
         std::string _value;
     };
 
-    template<class type_e>
     class mapType : public valueType {
     public:
+        mapType() = default;
+
+        ~mapType() {
+            for (const auto &pair: _value) {
+                delete pair.second;
+            }
+        }
+
+        valueType get(std::string &key) override { return *_value[key]; };
+
+        std::string dump() override;
+
     private:
         std::unordered_map<std::string, valueType *> _value;
+    };
+
+    class listType : public valueType {
+        listType() = default;
+
+        ~listType() {
+            for (auto item: _value) {
+                delete item;
+            }
+        }
+
+        std::string dump() override;
+
+        valueType get(size_t &index) override { return *_value.at(index); }
+
+    private:
+        std::vector<valueType *> _value;
     };
 
     // json迭代器
@@ -152,38 +197,37 @@ namespace json {
 
         json() = default;
 
-        explicit json(valueType &&other) {
-            _value = &other;
-        }
+        explicit json(int &value) { _value = new numberType(value); }
 
-        explicit json(valueType &other) {
-            _value = &other;
-        }
+        explicit json(float &value) { _value = new numberType(value); }
 
-        json(json &other) {
-            _value = other._value->copy();
-        }
+        json(json &other) { if (other._value != nullptr) { _value = other._value->copy_p(); }}
 
-        ~json() {
-            delete _value;
-        }
+        ~json() { if (!_fake) { delete _value; }}
 
-        // 下标读取
-        json operator[](size_t index) {
+        // 获取临时对象
+        template<class key_t>
+        json operator[](key_t &index) {
+            if (_value == nullptr) {
+                _value = new mapType();
+            }
             return json(_value->get(index));
         };
 
-        // key读取
-        json operator[](std::string &index) {
-            return json(_value->get(index));
-        };
+        template<class key_t>
+        json operator[](key_t &&index) { return this[index]; };
 
         // 赋值替换
         template<class arg_t>
         json &operator=(std::initializer_list<arg_t> list) {};
 
         template<class arg_t>
-        json &operator=(std::initializer_list<std::initializer_list<arg_t>> list) {};
+        json &operator=(std::initializer_list<std::pair<std::string, arg_t>> list) {
+            delete _value;
+            _value = new mapType();
+
+            // TODO 赋值map
+        };
 
         jsonIter begin() { return _value->begin(); };
 
@@ -193,6 +237,13 @@ namespace json {
     private:
         valueType *_value = nullptr;
         json *parent_p = nullptr;
+        // 暂时存在的json对象 引用其他对象的值
+        bool _fake = false;
+
+        // 直接传入元素对象时 建立临时的json对象 不在堆区新建元素对象
+        explicit json(valueType &&other) : _value(&other), _fake(true) {}
+
+        explicit json(valueType &other) : _value(&other), _fake(true) {}
     };
 
 }

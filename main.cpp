@@ -3,6 +3,7 @@
 #include "fstream"
 #include "util/json/JsonElement.h"
 #include "util/json/JsonParser.h"
+#include "util/json/elements.h"
 #include "chrono"
 #include "unordered_map"
 
@@ -30,9 +31,11 @@ void func() {
     delete j;
 }
 
+void element(){
+}
+
 int main() {
-    std::wstring str;
-    std::string temp = "啊啊啊";
+    func();
 }
 
 
