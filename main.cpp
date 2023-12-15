@@ -32,10 +32,23 @@ void func() {
 }
 
 void element(){
+    json::json js;
+    js["name"];
+    js["name"] = 1;
+    auto temp = js["name"];
+    temp = 12;
 }
 
+void test() {
+    int ** a;
+    int *b = new int(1);
+    a = &b;
+    std::cout << a << '\n' << *a << '\n' << **a << '\n';
+    delete b;
+};
+
 int main() {
-    func();
+    element();
 }
 
 
