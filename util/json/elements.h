@@ -71,10 +71,11 @@ namespace json::elements {
 
         // 是否为空类型
         virtual bool isNull() { return false; };
+
     private:
     };
 
-    // TODO null类型单例问题
+    // 全局单例
     class nullType : public valueType {
     public:
         int8_t type() override { return 1; };
@@ -84,17 +85,21 @@ namespace json::elements {
         std::string dump() override { return "null"; };
 
         // 返回单例指针
-        void *operator new(size_t size);
+        static void *operator new(size_t size);
 
         // 重载取消对单例的释放
-        void operator delete(void *ptr);
-
-        nullType() = default;
+        static void operator delete(void *ptr);
 
         valueType *copy_p() override { return singlePtr; }
 
+        // 单例对象栈指针
         static nullType *singlePtr;
     private:
+        nullType() = default;
+
+        ~nullType() = default;
+
+        //单例对象
         static nullType _singleNull;
     };
 
@@ -165,7 +170,7 @@ namespace json::elements {
             }
         }
 
-        valueType *&at(std::string &key) override { return _value[key]; };
+        valueType *&at(std::string &key) override;
 
         std::string dump() override;
 
@@ -184,6 +189,11 @@ namespace json::elements {
         }
 
         std::string dump() override;
+
+        void push_back(valueType *other) override {
+            _value.push_back(other);
+        }
+
 
         valueType *&at(size_t &index) override { return _value.at(index); }
 
@@ -228,14 +238,20 @@ namespace json {
             *_value = _generate(other);
         }
 
+        json(const json &other) {
+            *_value = (*_value)->copy_p();
+        }
+
         // 传入json值类型初始化json对象 默认为指向原数据的临时json对象
-        explicit json(valueType *&&other, bool fake = true) : _value(&other), _fake(fake) {};
+        explicit json(valueType *&&other, bool fake = true) : _fake(fake) { *_value = other; };
 
-        explicit json(valueType *&other, bool fake = true) : _value(&other), _fake(fake) {};
+        explicit json(valueType *&other, bool fake = true) : _fake(fake) { *_value = other; };
 
+        // 拷贝构造拷贝复制体时也生成复制体
         json(json &other) {
             if (*other._value != nullptr) {
-                *_value = (*other._value)->copy_p();
+                *_value = other._fake ? *(other._value) : (*other._value)->copy_p();
+                _fake = other._fake;
             }
         }
 
@@ -267,7 +283,18 @@ namespace json {
         template<class arg_t>
         json &operator=(arg_t arg) {
             delete *_value;
-            *_value = _generate(arg);
+            // TODO: 替换容器内指针元素使得容器容器内元素置空，
+            **_value = std::move(*_generate(arg));
+            return *this;
+        }
+
+        // 传入json对象时防止自赋值导致的空指针访问
+        json &operator=(const json &other) {
+            if (this == &other) { return *this; }
+            delete *_value;
+            // 传入复制体时this也变为复制体
+            *_value = other._fake ? *(other._value) : _generate(*(other._value));
+            _fake = other._fake;
             return *this;
         }
 
@@ -281,11 +308,6 @@ namespace json {
             }
             return *this;
         };
-
-//        json &operator=(std::initializer_list<std::pair<std::string, int>> list) {
-//            _initial_map(list);
-//            return *this;
-//        }
 
         json &operator=(std::initializer_list<std::pair<std::string, double>> list) {
             _initial_map(list);
@@ -301,18 +323,19 @@ namespace json {
 
         jsonIter end() { return (*_value)->end(); };
 
-        std::wstring dump(const char *encode="utf-8") ;
+        std::wstring _dump(const char *encode = "utf-8");
+
+        [[nodiscard]] std::string dump() const { return '"' + (*_value)->dump() + '"'; }
 
         template<class init_t>
         void push_back(init_t other) { (*_value)->push_back(_generate(other)); }
 
     private:
         valueType **_value = new valueType *;
-        json *parent_p = nullptr;
         // 暂时存在的json对象 引用其他对象的值
         bool _fake = false;
 
-        // c++原生类型转为json值类型
+        // 常用类型转为json值类型
         static valueType *_generate(int &arg) { return new numberType(arg); };
 
         static valueType *_generate(double &arg) { return new numberType(arg); };
@@ -325,6 +348,15 @@ namespace json {
 
         static valueType *_generate(json &arg) { return (*arg._value)->copy_p(); };
 
+        template<class ele_t>
+        static valueType *_generate(std::vector<ele_t> list) {
+            auto res = new listType();
+            for (auto item: list) {
+                res->push_back(_generate(item));
+            }
+            return res;
+        }
+
         template<class init_t>
         void _initial_map(std::initializer_list<std::pair<std::string, init_t>> list) {
             delete *_value;
@@ -336,7 +368,7 @@ namespace json {
         }
     };
 
-    static const ::json::json Null;
+    extern const ::json::json Null;
 }
 
 

@@ -1,18 +1,1 @@
-{
-  "name": "Mic  ",
-  "age": 10.2,
-  "marry": false,
-  "products": [
-    {
-      "type": "car\u4e9f",
-      "price": 100000000.00,
-      "name": null
-    },
-    {
-      "salary": 10000
-    },
-    {
-      "deposit": -1234.009
-    }
-  ], "": null
-}
+{"name": "1235","Content-Type": "application/json","Cookie": "123456"}
