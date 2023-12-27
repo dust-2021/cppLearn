@@ -31,13 +31,19 @@ void element() {
     std::cout << res << '\n';
 }
 
-void test_null(){
+void test_null() {
     auto a = json::json();
     auto b = json::json();
     a = json::Null;
     b = json::Null;
-    std::cout<< a.dump() << b.dump() << '\n';
+    std::cout << a.dump() << b.dump() << '\n';
 }
+
+void test(){
+
+}
+
+
 
 int main() {
     element();

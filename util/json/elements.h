@@ -10,6 +10,9 @@
 namespace json::elements {
     class valueType;
 
+    // 容器内成员类型 一级指针保证多态 二级指针保证可以直接修改原成员
+    typedef valueType **inner_type;
+
     class jsonIter;
 
     // json 元素异常
@@ -47,15 +50,15 @@ namespace json::elements {
          * 容器类型 map、 list元素为valueType指针
          * 返回类型 valueType指针的引用，json对象可根据引用直接修改容器内元素值
          * */
-        virtual valueType *&at(size_t &index) { throw jsonError("element doesnt support 'at'"); };
+        virtual inner_type at(size_t &index) { throw jsonError("element doesnt support 'at'"); };
 
-        valueType *&at(size_t &&index) { return at(index); };
+        inner_type at(size_t &&index) { return at(index); };
 
-        virtual valueType *&at(std::string &key) { throw jsonError("element doesnt support 'at'"); };
+        virtual inner_type at(std::string &key) { throw jsonError("element doesnt support 'at'"); };
 
-        valueType *&at(std::string &&key) { return at(key); };
+        inner_type at(std::string &&key) { return at(key); };
 
-        virtual void push_back(valueType *other) { throw jsonError("element doesnt support 'at'"); };
+        virtual void push_back(inner_type &other) { throw jsonError("element doesnt support 'at'"); };
 
         virtual jsonIter begin();
 
@@ -130,6 +133,8 @@ namespace json::elements {
 
         std::string dump() override { return '"' + _value + '"'; };
 
+        valueType *copy_p() override { return new stringType(_value); }
+
     private:
         std::string _value;
     };
@@ -152,6 +157,8 @@ namespace json::elements {
 
         double asDouble() override { return std::stod(_value); };
 
+        valueType *copy_p() override { return new numberType(_value);};
+
     private:
         std::string _value;
     };
@@ -166,16 +173,20 @@ namespace json::elements {
 
         ~mapType() {
             for (const auto &pair: _value) {
+                delete *(pair.second);
                 delete pair.second;
             }
         }
 
-        valueType *&at(std::string &key) override;
+        // 返回容器内指针引用 可直接修改指针指向的值
+        inner_type at(std::string &key) override;
 
         std::string dump() override;
 
+        valueType * copy_p() override;
+
     private:
-        std::unordered_map<std::string, valueType *> _value;
+        std::unordered_map<std::string, inner_type> _value;
     };
 
     class listType : public valueType {
@@ -184,21 +195,23 @@ namespace json::elements {
 
         ~listType() {
             for (auto item: _value) {
+                delete *item;
                 delete item;
             }
         }
 
         std::string dump() override;
 
-        void push_back(valueType *other) override {
+        void push_back(inner_type &other) override {
             _value.push_back(other);
         }
 
+        inner_type at(size_t &index) override { return _value.at(index); }
 
-        valueType *&at(size_t &index) override { return _value.at(index); }
+        valueType* copy_p() override;
 
     private:
-        std::vector<valueType *> _value;
+        std::vector<inner_type> _value;
     };
 
     // json迭代器
@@ -239,13 +252,14 @@ namespace json {
         }
 
         json(const json &other) {
-            *_value = (*_value)->copy_p();
+            *_value = (*other._value)->copy_p();
+            _fake = other._fake;
         }
 
         // 传入json值类型初始化json对象 默认为指向原数据的临时json对象
-        explicit json(valueType *&&other, bool fake = true) : _fake(fake) { *_value = other; };
+        explicit json(inner_type &&other, bool fake = true) : _fake(fake) { _value = other; };
 
-        explicit json(valueType *&other, bool fake = true) : _fake(fake) { *_value = other; };
+        explicit json(inner_type &other, bool fake = true) : _fake(fake) { _value = other; };
 
         // 拷贝构造拷贝复制体时也生成复制体
         json(json &other) {
@@ -283,8 +297,7 @@ namespace json {
         template<class arg_t>
         json &operator=(arg_t arg) {
             delete *_value;
-            // TODO: 替换容器内指针元素使得容器容器内元素置空，
-            **_value = std::move(*_generate(arg));
+            *_value = _generate(arg);
             return *this;
         }
 
@@ -293,7 +306,7 @@ namespace json {
             if (this == &other) { return *this; }
             delete *_value;
             // 传入复制体时this也变为复制体
-            *_value = other._fake ? *(other._value) : _generate(*(other._value));
+            *_value = other._fake ? *(other._value) : _generate(other._value);
             _fake = other._fake;
             return *this;
         }
@@ -323,15 +336,13 @@ namespace json {
 
         jsonIter end() { return (*_value)->end(); };
 
-        std::wstring _dump(const char *encode = "utf-8");
-
         [[nodiscard]] std::string dump() const { return '"' + (*_value)->dump() + '"'; }
 
         template<class init_t>
         void push_back(init_t other) { (*_value)->push_back(_generate(other)); }
 
     private:
-        valueType **_value = new valueType *;
+        inner_type _value = new valueType *;
         // 暂时存在的json对象 引用其他对象的值
         bool _fake = false;
 
@@ -344,7 +355,7 @@ namespace json {
 
         static valueType *_generate(const char *arg) { return new stringType(arg); }
 
-        static valueType *_generate(valueType *arg) { return arg->copy_p(); };
+        static valueType *_generate(inner_type arg) { return (*arg)->copy_p(); };
 
         static valueType *_generate(json &arg) { return (*arg._value)->copy_p(); };
 
@@ -363,7 +374,7 @@ namespace json {
             *_value = new mapType();
 
             for (auto pair: list) {
-                (*_value)->at(pair.first) = _generate(pair.second);
+                *(*_value)->at(pair.first) = _generate(pair.second);
             }
         }
     };
