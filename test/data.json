@@ -1,1 +1,1 @@
-{"age": 12,"name": 13,"Content-Type": "application/json","Cookie": "123456"}
+{"data": [1,2,3,4],"other": ["etc","ddd"],"others": null,"age": 12,"name": 13,"Content-Type": "application/json","Cookie": null}

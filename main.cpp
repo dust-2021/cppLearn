@@ -1,9 +1,7 @@
 #include <iostream>
-#include <utility>
 #include "fstream"
 #include "util/json/elements.h"
-#include "chrono"
-#include "unordered_map"
+#include "thread"
 
 void dump_to(const char *path, std::string &text) {
     std::ofstream out(path);
@@ -20,9 +18,13 @@ void element() {
           {"name",         "大大大"}};
     js["name"] = 13;
     js["age"] = 12;
-//    js["Cookie"] = json::Null;
+    js["others"] = {{"location", 12}};
+    js["data"] = {1, 2, 3, 4};
+    js["Cookie"] = json::Null;
+    js["others"] = json::Null;
+    js["other"] = {"etc", "ddd"};
 
-//    std::cout << json::Null.dump() << '\n';
+    std::cout << json::Null.dump() << '\n';
     auto res = js.dump();
     auto stores = res.substr(1, res.size() - 2);
     dump_to(R"(C:\code\cppCode\firstProject\test\data.json)", stores);
@@ -39,10 +41,9 @@ void test_null() {
     std::cout << a.dump() << b.dump() << '\n';
 }
 
-void test(){
-
+void test() {
+    std::thread thread_job(element);
 }
-
 
 
 int main() {

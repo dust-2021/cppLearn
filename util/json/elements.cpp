@@ -3,7 +3,8 @@
 
 // json null 单例对象和对象指针
 json::elements::nullType json::elements::nullType::_singleNull = nullType();
-json::elements::nullType *json::elements::nullType::singlePtr = &_singleNull;
+json::elements::valueType *json::elements::nullType::singlePtr = &_singleNull;
+json::inner_type json::elements::nullType::singleDp = &singlePtr;
 
 void *json::elements::nullType::operator new(size_t size) {
     return singlePtr;
@@ -50,7 +51,7 @@ json::elements::inner_type json::elements::mapType::at(std::string &key) {
 std::string json::elements::listType::dump() {
     std::string res = "[";
     for (auto item: _value) {
-        if (res != "{") {
+        if (res != "[") {
             res += ',';
         }
         res += (*item)->dump();
@@ -77,7 +78,7 @@ json::elements::jsonIter json::elements::valueType::end() {
     throw jsonError("element not support traverse");
 }
 
-const ::json::json json::Null = ::json::json();
+const ::json::json json::Null = ::json::json(nullType::singleDp);
 
 
 

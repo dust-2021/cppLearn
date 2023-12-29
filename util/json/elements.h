@@ -96,7 +96,9 @@ namespace json::elements {
         valueType *copy_p() override { return singlePtr; }
 
         // 单例对象栈指针
-        static nullType *singlePtr;
+        static valueType *singlePtr;
+
+        static inner_type singleDp;
     private:
         nullType() = default;
 
@@ -185,6 +187,8 @@ namespace json::elements {
 
         valueType * copy_p() override;
 
+        int8_t type() override {return 5;}
+
     private:
         std::unordered_map<std::string, inner_type> _value;
     };
@@ -209,6 +213,8 @@ namespace json::elements {
         inner_type at(size_t &index) override { return _value.at(index); }
 
         valueType* copy_p() override;
+
+        int8_t type() override {return 6;}
 
     private:
         std::vector<inner_type> _value;
@@ -317,11 +323,14 @@ namespace json {
             delete *_value;
             *_value = new listType();
             for (auto item: list) {
-                (*_value)->push_back(_generate(item));
+                auto temp = new valueType*;
+                *temp = _generate(item);
+                (*_value)->push_back(temp);
             }
             return *this;
         };
 
+        //
         json &operator=(std::initializer_list<std::pair<std::string, double>> list) {
             _initial_map(list);
             return *this;
