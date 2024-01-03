@@ -6,15 +6,9 @@
 #include "iostream"
 #include "vector"
 #include "unordered_map"
+#include "regex"
 
-namespace json::elements {
-    class valueType;
-
-    // 容器内成员类型 一级指针保证多态 二级指针保证可以直接修改原成员
-    typedef valueType **inner_type;
-
-    class jsonIter;
-
+namespace json {
     // json 元素异常
     class jsonError : public std::exception {
     public:
@@ -28,6 +22,43 @@ namespace json::elements {
 
         [[nodiscard]] const char *what() const noexcept override { return this->info.c_str(); };
     };
+}
+
+namespace json::elements {
+
+    static std::unordered_map<int, std::string> name_map = {{0, "base"},
+                                                            {1, "null"},
+                                                            {2, "bool"},
+                                                            {3, "number"},
+                                                            {4, "string"},
+                                                            {5, "map"},
+                                                            {6, "list"}};
+
+    class valueType;
+
+    // 容器内成员类型 一级指针保证多态 二级指针保证可以直接修改原成员
+    typedef valueType **inner_type;
+
+    struct Box {
+        std::string key;
+        inner_type value = new valueType*;
+
+        void clear() {
+            key.clear();
+            // 不释放内存 数据已移交json对象
+            *value = nullptr;
+        }
+        Box(){
+            *value = nullptr;
+        }
+        ~Box(){
+            delete value;
+        }
+    };
+
+
+    class jsonIter;
+
 
     class valueType {
     public:
@@ -50,30 +81,42 @@ namespace json::elements {
          * 容器类型 map、 list元素为valueType指针
          * 返回类型 valueType指针的引用，json对象可根据引用直接修改容器内元素值
          * */
-        virtual inner_type at(size_t &index) { throw jsonError("element doesnt support 'at'"); };
+        virtual inner_type at(size_t &index) {
+            throw jsonError(name_map[this->type()] + " element doesnt support 'at'");
+        };
 
         inner_type at(size_t &&index) { return at(index); };
 
-        virtual inner_type at(std::string &key) { throw jsonError("element doesnt support 'at'"); };
+        virtual inner_type at(std::string &key) {
+            throw jsonError(name_map[this->type()] + " element doesnt support 'at'");
+        };
 
         inner_type at(std::string &&key) { return at(key); };
 
-        virtual void push_back(inner_type &other) { throw jsonError("element doesnt support 'at'"); };
+        virtual void push_back(inner_type &other) {
+            throw jsonError(name_map[this->type()] + " element doesnt support 'push_back'");
+        };
 
         virtual jsonIter begin();
 
         virtual jsonIter end();
 
-        virtual bool asBool() { throw jsonError("element doesnt support 'asBool'"); };
+        virtual bool asBool() { throw jsonError(name_map[this->type()] + " element doesnt support 'asBool'"); };
 
-        virtual int asInt() { throw jsonError("element doesnt support 'asInt'"); };
+        virtual int asInt() { throw jsonError(name_map[this->type()] + " element doesnt support 'asInt'"); };
 
-        virtual double asDouble() { throw jsonError("element doesnt support 'asDouble'"); };
+        virtual double asDouble() { throw jsonError(name_map[this->type()] + " element doesnt support 'asDouble'"); };
 
-        virtual std::string asString() { throw jsonError("element doesnt support 'asString'"); };
+        virtual std::string asString() {
+            throw jsonError(name_map[this->type()] + " element doesnt support 'asString'");
+        };
 
         // 是否为空类型
         virtual bool isNull() { return false; };
+
+        virtual void parseAdd(Box &box) {
+            throw jsonError(name_map[this->type()] + " element doesnt support 'parseAdd'");
+        };
 
     private:
     };
@@ -88,10 +131,10 @@ namespace json::elements {
         std::string dump() override { return "null"; };
 
         // 返回单例指针
-        static void *operator new(size_t size);
+        void *operator new(size_t size);
 
         // 重载取消对单例的释放
-        static void operator delete(void *ptr);
+        void operator delete(void *ptr);
 
         valueType *copy_p() override { return singlePtr; }
 
@@ -99,10 +142,12 @@ namespace json::elements {
         static valueType *singlePtr;
 
         static inner_type singleDp;
-    private:
+
         nullType() = default;
 
         ~nullType() = default;
+
+    private:
 
         //单例对象
         static nullType _singleNull;
@@ -159,7 +204,7 @@ namespace json::elements {
 
         double asDouble() override { return std::stod(_value); };
 
-        valueType *copy_p() override { return new numberType(_value);};
+        valueType *copy_p() override { return new numberType(_value); };
 
     private:
         std::string _value;
@@ -185,9 +230,14 @@ namespace json::elements {
 
         std::string dump() override;
 
-        valueType * copy_p() override;
+        valueType *copy_p() override;
 
-        int8_t type() override {return 5;}
+        int8_t type() override { return 5; }
+
+        void parseAdd(Box &box) override {
+            _value[box.key] = box.value;
+            box.clear();
+        };
 
     private:
         std::unordered_map<std::string, inner_type> _value;
@@ -212,9 +262,14 @@ namespace json::elements {
 
         inner_type at(size_t &index) override { return _value.at(index); }
 
-        valueType* copy_p() override;
+        valueType *copy_p() override;
 
-        int8_t type() override {return 6;}
+        int8_t type() override { return 6; }
+
+        void parseAdd(Box &box) override {
+            _value.push_back(box.value);
+            box.clear();
+        }
 
     private:
         std::vector<inner_type> _value;
@@ -249,15 +304,18 @@ namespace json {
          * */
     public:
 
-        json() { *_value = nullptr; };
+        json() {
+            _value = new valueType*;
+            *_value = nullptr; };
 
         template<class init_t>
         explicit json(init_t other) {
-
+            _value = new valueType*;
             *_value = _generate(other);
         }
 
         json(const json &other) {
+            _value = new valueType*;
             *_value = (*other._value)->copy_p();
             _fake = other._fake;
         }
@@ -269,6 +327,7 @@ namespace json {
 
         // 拷贝构造拷贝复制体时也生成复制体
         json(json &other) {
+            _value = new valueType*;
             if (*other._value != nullptr) {
                 *_value = other._fake ? *(other._value) : (*other._value)->copy_p();
                 _fake = other._fake;
@@ -290,14 +349,18 @@ namespace json {
         template<class key_t>
         json operator[](key_t &index) {
             if (*_value == nullptr) {
-                delete *_value;
                 *_value = new mapType();
             }
             return json((*_value)->at(index));
         };
 
         template<class key_t>
-        json operator[](key_t &&index) { return this[index]; };
+        json operator[](key_t &&index) {
+            if (*_value == nullptr) {
+                *_value = new mapType();
+            }
+            return json((*_value)->at(index));
+        }
 
         // 释放二级指针指向的值 替换二级指针指向的指针的值
         template<class arg_t>
@@ -323,7 +386,7 @@ namespace json {
             delete *_value;
             *_value = new listType();
             for (auto item: list) {
-                auto temp = new valueType*;
+                auto temp = new valueType *;
                 *temp = _generate(item);
                 (*_value)->push_back(temp);
             }
@@ -350,8 +413,12 @@ namespace json {
         template<class init_t>
         void push_back(init_t other) { (*_value)->push_back(_generate(other)); }
 
+        int toInt() { return (*_value)->asInt(); };
+
+        double toDouble() { return (*_value)->asDouble(); };
+
     private:
-        inner_type _value = new valueType *;
+        inner_type _value = nullptr;
         // 暂时存在的json对象 引用其他对象的值
         bool _fake = false;
 
@@ -389,6 +456,74 @@ namespace json {
     };
 
     extern const ::json::json Null;
+
+    json parse(std::string &text);
+}
+
+namespace json::parser {
+
+    // 解析对象
+    class Parser {
+    public:
+        // 无视字符
+        static std::vector<char> ignoreChar;
+        // 数字正则规则
+        static std::regex numberReg;
+        // 单元结束符
+        static std::vector<char> endPiece;
+        // 容器结束单元
+        static std::unordered_map<int, std::vector<char>> endContainer;
+
+        explicit Parser(std::string &text) : _text(text) { currentPtr = text.c_str(); };
+
+        explicit Parser(std::string &&text) : _text(text) { currentPtr = text.c_str(); };
+
+        elements::valueType *parse();
+
+
+    private:
+        // 待解析字符串
+        std::string _text;
+
+        // 解析结果
+        elements::valueType *result = nullptr;
+
+        // 当前json元素
+        elements::valueType *currentElement = nullptr;
+
+        // 临时切换对象
+        elements::valueType *temp = nullptr;
+
+        // 当前字符
+        const char *currentPtr = nullptr;
+
+        // 当前字符位置
+        size_t location = 0;
+
+        // 缓存字符串
+        std::string memoryString;
+
+        // 初始化json元素的结构体
+        elements::Box box;
+
+        // 嵌套容器存储
+        std::stack<elements::valueType *> container;
+
+        // 解析双引号内容
+        std::string innerQuote();
+
+        // 读取非引号内字符
+        void normalParse();
+
+        // 逐字符解析
+        void charSwitch();
+
+        // 每当一个字符被解析 字符指针和位置记录加一
+        void advance(int num = 1);
+
+        // 从当前字符开始 检查下一个有效字符
+        [[nodiscard]] char checkNextChar(size_t &&offset = 0, bool backStep = false) const;
+    };
 }
 
 

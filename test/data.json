@@ -1,1 +1,1 @@
-{"data": [1,2,3,4],"other": ["etc","ddd"],"others": null,"age": 12,"name": 13,"Content-Type": "application/json","Cookie": null}
+{"data": [1,2,3,4],"others": {"location": 12.000000},"name": 13,"Cookie": null,"other": ["etc","ddd"],"Content-Type": "application/json"}
